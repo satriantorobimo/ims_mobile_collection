@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "877015450273",
+    "project_id": "ims-mobile-collection-dev",
+    "storage_bucket": "ims-mobile-collection-dev.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:877015450273:android:5250809dcc57ec5fb5e6e0",
+        "android_client_info": {
+          "package_name": "com.ims.mobile_collection.dev"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAqIlE9hEXNBckX9Y5Xrcjfl_2QxMQoaBc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

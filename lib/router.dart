@@ -61,8 +61,10 @@ class Routers {
                 FadeTransition(opacity: a, child: c));
 
       case StringRouterUtil.amortizationScreenRoute:
+        final AgreementList agreementList = settings.arguments as AgreementList;
         return PageRouteBuilder<dynamic>(
-            pageBuilder: (_, __, ___) => const AmortizationScreen(),
+            pageBuilder: (_, __, ___) =>
+                AmortizationScreen(agreementList: agreementList),
             settings: RouteSettings(name: settings.name),
             transitionsBuilder: (_, Animation<double> a, __, Widget c) =>
                 FadeTransition(opacity: a, child: c));

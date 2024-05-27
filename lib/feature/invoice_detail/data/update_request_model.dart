@@ -13,7 +13,7 @@ class UpdateRequestModel {
       this.pResultPaymentAmount});
 
   UpdateRequestModel.fromJson(Map<String, dynamic> json) {
-    pId = json['p__id'];
+    pId = json['p_id'];
     pResultCode = json['p_result_code'];
     pResultRemarks = json['p_result_remarks'];
     pResultPromiseDate = json['p_result_promise_date'];
@@ -22,7 +22,7 @@ class UpdateRequestModel {
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
-    data['p__id'] = pId;
+    data['p_id'] = pId;
     data['p_result_code'] = pResultCode;
     data['p_result_remarks'] = pResultRemarks;
     data['p_result_promise_date'] = pResultPromiseDate;

@@ -142,7 +142,7 @@ class DatabaseHelper {
         Batch batch = db.batch();
         for (var val in data) {
           batch.insert('cust', val.toMap(),
-              conflictAlgorithm: sql.ConflictAlgorithm.replace);
+              conflictAlgorithm: sql.ConflictAlgorithm.ignore);
         }
         batch.commit();
         await db.close();
@@ -162,7 +162,7 @@ class DatabaseHelper {
         Batch batch = db.batch();
         for (var val in data) {
           batch.insert('history', val.toMap(),
-              conflictAlgorithm: sql.ConflictAlgorithm.replace);
+              conflictAlgorithm: sql.ConflictAlgorithm.ignore);
         }
         batch.commit();
         await db.close();
@@ -180,7 +180,7 @@ class DatabaseHelper {
         Batch batch = db.batch();
         for (var val in data) {
           batch.insert('amortization', val.toMap(),
-              conflictAlgorithm: sql.ConflictAlgorithm.replace);
+              conflictAlgorithm: sql.ConflictAlgorithm.ignore);
         }
         batch.commit();
         await db.close();
@@ -198,7 +198,7 @@ class DatabaseHelper {
         Batch batch = db.batch();
         for (var val in data) {
           batch.insert('paymentlist', val.toMap(),
-              conflictAlgorithm: sql.ConflictAlgorithm.replace);
+              conflictAlgorithm: sql.ConflictAlgorithm.ignore);
         }
         batch.commit();
         await db.close();
@@ -216,7 +216,7 @@ class DatabaseHelper {
         Batch batch = db.batch();
         for (var val in data) {
           batch.insert('agreement', val.toMap(),
-              conflictAlgorithm: sql.ConflictAlgorithm.replace);
+              conflictAlgorithm: sql.ConflictAlgorithm.ignore);
         }
         batch.commit();
         await db.close();
@@ -235,7 +235,7 @@ class DatabaseHelper {
         Batch batch = db.batch();
         for (var val in data) {
           batch.insert('dailystatus', val.toMap(),
-              conflictAlgorithm: sql.ConflictAlgorithm.replace);
+              conflictAlgorithm: sql.ConflictAlgorithm.ignore);
         }
         batch.commit();
         await db.close();
@@ -253,7 +253,7 @@ class DatabaseHelper {
         Batch batch = db.batch();
         for (var val in data) {
           batch.insert('achieve', val.toMap(),
-              conflictAlgorithm: sql.ConflictAlgorithm.replace);
+              conflictAlgorithm: sql.ConflictAlgorithm.ignore);
         }
         batch.commit();
         await db.close();
@@ -270,7 +270,7 @@ class DatabaseHelper {
         final db = await DatabaseHelper.db();
 
         await db.insert('user', datalist.toMap(),
-            conflictAlgorithm: sql.ConflictAlgorithm.replace);
+            conflictAlgorithm: sql.ConflictAlgorithm.ignore);
         await db.close();
       } catch (e) {
         dev.log('Error $e');
@@ -416,7 +416,7 @@ class DatabaseHelper {
       {int? taskId,
       String? resultCode,
       String? resultRemark,
-      double? resultPromiseDate,
+      String? resultPromiseDate,
       String? resultPaymentAmount}) async {
     return _lock.synchronized(() async {
       final db = await DatabaseHelper.db();

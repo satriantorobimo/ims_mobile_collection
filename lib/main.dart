@@ -6,6 +6,7 @@ import 'package:mobile_collection/utility/string_router_util.dart';
 import 'package:provider/provider.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 

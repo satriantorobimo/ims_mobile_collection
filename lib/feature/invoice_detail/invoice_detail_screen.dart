@@ -1,10 +1,19 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_collection/components/color_comp.dart';
 import 'package:mobile_collection/feature/assignment/data/task_list_response_model.dart';
+import 'package:mobile_collection/feature/invoice_detail/bloc/update_bloc/bloc.dart';
+import 'package:mobile_collection/feature/invoice_detail/data/update_request_model.dart';
+import 'package:mobile_collection/feature/invoice_detail/domain/repo/update_repo.dart';
+import 'package:mobile_collection/utility/database_helper.dart';
 import 'package:mobile_collection/utility/drop_down_util.dart';
 import 'package:mobile_collection/utility/general_util.dart';
+import 'package:mobile_collection/utility/network_util.dart';
 import 'package:mobile_collection/utility/string_router_util.dart';
 
 class InvoiceDetailScreen extends StatefulWidget {
@@ -15,8 +24,17 @@ class InvoiceDetailScreen extends StatefulWidget {
   State<InvoiceDetailScreen> createState() => _InvoiceDetailScreenState();
 }
 
-class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
-  late List<String> filterValue = ['PAID', 'PROMISE'];
+class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
+    with TickerProviderStateMixin {
+  AnimationController? animationController;
+
+  late List<String> filterValue = [
+    'PAID',
+    'ALREADY PAID',
+    'PROMISE',
+    'NOT PAID',
+    'NOT FOUND'
+  ];
   late List<CustDropdownMenuItem> filter = [];
   String paidAmountValue = '';
   TextEditingController ctrlAmount = TextEditingController();
@@ -24,6 +42,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
   TextEditingController ctrlDate = TextEditingController();
   DateTime? _selectedDate = DateTime.now();
   String dateSend = '';
+  String collCode = '';
   var filterSelect = 0;
   Future<void> getStatus() async {
     setState(() {
@@ -37,10 +56,247 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
     });
   }
 
+  UpdateRequestModel updateRequestModel = UpdateRequestModel();
+
+  UpdateBloc updateBloc = UpdateBloc(updateRepo: UpdateRepo());
+
+  final InternetConnectionChecker internetConnectionChecker =
+      InternetConnectionChecker();
+
+  Future<void> updateData(UpdateRequestModel data) async {
+    await DatabaseHelper.updateAgreement(
+        taskId: widget.agreementList.taskId,
+        resultCode: data.pResultCode,
+        resultPaymentAmount: data.pResultPaymentAmount.toString(),
+        resultPromiseDate: data.pResultPromiseDate,
+        resultRemark: data.pResultRemarks);
+  }
+
+  @override
+  void dispose() {
+    animationController!.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
+    animationController =
+        AnimationController(duration: const Duration(seconds: 2), vsync: this);
+    animationController!.repeat();
+    setState(() {
+      dateSend = DateFormat('yyyy-MM-dd').format(_selectedDate!);
+    });
     getStatus();
+    getData();
     super.initState();
+  }
+
+  Future<void> getData() async {
+    final data = await DatabaseHelper.getUserData();
+    setState(() {
+      collCode = data[0]['uid'];
+    });
+  }
+
+  void loading(BuildContext context) {
+    showDialog(
+      useSafeArea: true,
+      barrierDismissible: false,
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(20.0))),
+          actionsPadding:
+              const EdgeInsets.only(bottom: 16, left: 16, right: 16),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+          title: Container(),
+          titlePadding: const EdgeInsets.only(top: 20, left: 20),
+          contentPadding: const EdgeInsets.only(
+            top: 0,
+            bottom: 24,
+            left: 24,
+            right: 24,
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: SizedBox(
+                  height: 60,
+                  width: 60,
+                  child: CircularProgressIndicator(
+                    valueColor: animationController!.drive(
+                        ColorTween(begin: thirdColor, end: secondaryColor)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Mohon menunggu sebentar',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF575551)),
+              ),
+            ],
+          ),
+          actions: const [],
+        );
+      },
+    );
+  }
+
+  void goHomeDraft() {
+    showDialog(
+      useSafeArea: true,
+      barrierDismissible: false,
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(20.0))),
+          actionsPadding:
+              const EdgeInsets.only(bottom: 16, left: 16, right: 16),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+          title: Container(),
+          titlePadding: const EdgeInsets.only(top: 20, left: 20),
+          contentPadding: const EdgeInsets.only(
+            top: 0,
+            bottom: 24,
+            left: 24,
+            right: 24,
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Center(
+                child: Icon(
+                  Icons.check_circle,
+                  color: Color(0xFF4CAB7D),
+                  size: 80,
+                ),
+              ),
+              SizedBox(height: 24),
+              Text(
+                'Data berhasil disimpan',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF575551)),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Data akan masuk ke status not sync.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF575551)),
+              ),
+            ],
+          ),
+          actions: [
+            InkWell(
+              onTap: () {
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  StringRouterUtil.tabScreenRoute,
+                  (route) => false,
+                );
+              },
+              child: Container(
+                width: double.infinity,
+                height: 45,
+                decoration: BoxDecoration(
+                  color: thirdColor,
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                child: const Center(
+                    child: Text('Ok',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.black,
+                            fontWeight: FontWeight.w600))),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void goHome() {
+    showDialog(
+      useSafeArea: true,
+      barrierDismissible: true,
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(20.0))),
+          actionsPadding:
+              const EdgeInsets.only(bottom: 16, left: 16, right: 16),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+          title: Container(),
+          titlePadding: const EdgeInsets.only(top: 20, left: 20),
+          contentPadding: const EdgeInsets.only(
+            top: 0,
+            bottom: 24,
+            left: 24,
+            right: 24,
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Center(
+                child: Icon(
+                  Icons.check_circle,
+                  color: Color(0xFF4CAB7D),
+                  size: 80,
+                ),
+              ),
+              SizedBox(height: 24),
+              Text(
+                'Data berhasil dikirim',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF575551)),
+              ),
+            ],
+          ),
+          actions: [
+            InkWell(
+              onTap: () async {
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  StringRouterUtil.tabScreenRoute,
+                  (route) => false,
+                );
+              },
+              child: Container(
+                width: double.infinity,
+                height: 45,
+                decoration: BoxDecoration(
+                  color: thirdColor,
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                child: const Center(
+                    child: Text('Ok',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.black,
+                            fontWeight: FontWeight.w600))),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _showBottomMore(BuildContext context) {
@@ -75,7 +331,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
                             arguments: widget.agreementList);
                       },
                       child: const Text(
-                        'Invoice History',
+                        'Invoice Update',
                         style: TextStyle(
                             color: Colors.black,
                             fontSize: 18,
@@ -88,7 +344,8 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
                     child: InkWell(
                       onTap: () {
                         Navigator.pushNamed(
-                            context, StringRouterUtil.amortizationScreenRoute);
+                            context, StringRouterUtil.amortizationScreenRoute,
+                            arguments: widget.agreementList);
                       },
                       child: const Text(
                         'Amortization ',
@@ -772,23 +1029,184 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
                     ],
                   ),
                   SizedBox(height: 24),
-                  InkWell(
-                    onTap: () {},
-                    child: Container(
-                      width: double.infinity,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: thirdColor,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Center(
-                          child: Text('SAVE',
-                              style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.w600))),
-                    ),
-                  )
+                  BlocListener(
+                      bloc: updateBloc,
+                      listener: (_, UpdateState state) async {
+                        if (state is UpdateLoading) {}
+                        if (state is UpdateLoaded) {
+                          Navigator.pop(context);
+                          updateData(updateRequestModel).then((value) {
+                            Navigator.pop(context);
+                            goHome();
+                          });
+                        }
+                        if (state is UpdateError) {
+                          Navigator.pop(context);
+                          if (!mounted) return;
+                          GeneralUtil()
+                              .showSnackBarError(context, state.error!);
+                        }
+                        if (state is UpdateException) {
+                          Navigator.pop(context);
+                          if (!mounted) return;
+                          GeneralUtil().showSnackBarError(context, state.error);
+                        }
+                      },
+                      child: BlocBuilder(
+                          bloc: updateBloc,
+                          builder: (_, UpdateState state) {
+                            if (state is UpdateLoading) {
+                              return InkWell(
+                                onTap: null,
+                                child: Container(
+                                  width: double.infinity,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Center(
+                                      child: Text('SAVE',
+                                          style: TextStyle(
+                                              fontSize: 15,
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.w600))),
+                                ),
+                              );
+                            }
+                            if (state is UpdateLoaded) {
+                              return InkWell(
+                                onTap: null,
+                                child: Container(
+                                  width: double.infinity,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Center(
+                                      child: Text('SAVE',
+                                          style: TextStyle(
+                                              fontSize: 15,
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.w600))),
+                                ),
+                              );
+                            }
+                            if (state is UpdateError) {
+                              return InkWell(
+                                onTap: () {
+                                  updateRequestModel.pResultPaymentAmount =
+                                      int.parse(paidAmountValue == ''
+                                          ? '0'
+                                          : paidAmountValue);
+                                  updateRequestModel.pResultPromiseDate =
+                                      dateSend;
+                                  updateRequestModel.pId =
+                                      widget.agreementList.taskId;
+                                  updateRequestModel.pResultRemarks =
+                                      ctrlRemark.text;
+                                  updateRequestModel.pResultCode =
+                                      filterValue[filterSelect];
+                                },
+                                child: Container(
+                                  width: double.infinity,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    color: thirdColor,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Center(
+                                      child: Text('SAVE',
+                                          style: TextStyle(
+                                              fontSize: 15,
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.w600))),
+                                ),
+                              );
+                            }
+                            if (state is UpdateException) {
+                              return InkWell(
+                                onTap: () {
+                                  updateRequestModel.pResultPaymentAmount =
+                                      int.parse(paidAmountValue == ''
+                                          ? '0'
+                                          : paidAmountValue);
+                                  updateRequestModel.pResultPromiseDate =
+                                      dateSend;
+                                  updateRequestModel.pId =
+                                      widget.agreementList.taskId;
+                                  updateRequestModel.pResultRemarks =
+                                      ctrlRemark.text;
+                                  updateRequestModel.pResultCode =
+                                      filterValue[filterSelect];
+                                },
+                                child: Container(
+                                  width: double.infinity,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    color: thirdColor,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Center(
+                                      child: Text('SAVE',
+                                          style: TextStyle(
+                                              fontSize: 15,
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.w600))),
+                                ),
+                              );
+                            }
+                            return InkWell(
+                              onTap: () {
+                                updateRequestModel.pResultPaymentAmount =
+                                    int.parse(paidAmountValue == ''
+                                        ? '0'
+                                        : paidAmountValue);
+                                updateRequestModel.pResultPromiseDate =
+                                    dateSend;
+                                updateRequestModel.pId =
+                                    widget.agreementList.taskId;
+                                updateRequestModel.pResultRemarks =
+                                    ctrlRemark.text;
+                                updateRequestModel.pResultCode =
+                                    filterValue[filterSelect];
+                                loading(context);
+                                NetworkInfo(internetConnectionChecker)
+                                    .isConnected
+                                    .then((value) {
+                                  if (value) {
+                                    setState(() {
+                                      updateBloc.add(UpdateAttempt(
+                                          updateRequestModel, collCode));
+                                    });
+                                  } else {
+                                    setState(() async {
+                                      updateData(updateRequestModel)
+                                          .then((value) {
+                                        Navigator.pop(context);
+                                        goHomeDraft();
+                                      });
+                                    });
+                                  }
+                                });
+                              },
+                              child: Container(
+                                width: double.infinity,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: thirdColor,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Center(
+                                    child: Text('SAVE',
+                                        style: TextStyle(
+                                            fontSize: 15,
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.w600))),
+                              ),
+                            );
+                          })),
                 ],
               ),
             ),

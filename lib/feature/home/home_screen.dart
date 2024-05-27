@@ -1,12 +1,17 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:mobile_collection/feature/assignment/domain/repo/task_repo.dart';
 import 'package:mobile_collection/feature/home/bloc/dashboard_bloc/bloc.dart';
 import 'package:mobile_collection/feature/home/data/dashboard_response_model.dart';
 import 'package:mobile_collection/feature/home/domain/repo/dashboard_repo.dart';
 import 'package:mobile_collection/utility/database_helper.dart';
 import 'package:mobile_collection/utility/drop_down_util.dart';
+import 'package:mobile_collection/utility/general_util.dart';
+import 'package:mobile_collection/utility/network_util.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:shimmer/shimmer.dart';
 import '../assignment/bloc/task_bloc/bloc.dart';
@@ -46,12 +51,14 @@ class _HomeScreenState extends State<HomeScreen> {
   String dailyTargetCa = '0';
   String monthCountCa = '0';
   String monthTargetCa = '0';
-
+  bool isConnect = false;
   bool isLoading = true;
   bool isLoadingAchieve = true;
   late List<CustDropdownMenuItem> filter = [];
   TaskListBloc taskListBloc = TaskListBloc(taskRepo: TaskRepo());
   DashboardBloc dashboardBloc = DashboardBloc(dashboardRepo: DashboardRepo());
+  final InternetConnectionChecker internetConnectionChecker =
+      InternetConnectionChecker();
 
   Future<void> getStatus() async {
     setState(() {
@@ -70,8 +77,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> getData() async {
     final data = await DatabaseHelper.getUserData();
-    taskListBloc.add(TaskListAttempt(data[0]['uid']));
-    dashboardBloc.add(DashboardAttempt(data[0]['uid']));
+    NetworkInfo(internetConnectionChecker).isConnected.then((value) {
+      if (value) {
+        setState(() {
+          taskListBloc.add(TaskListAttempt(data[0]['uid']));
+          dashboardBloc.add(DashboardAttempt(data[0]['uid']));
+        });
+      } else {
+        setState(() async {
+          final dataSync = await DatabaseHelper.getAgreementSync();
+          final dataDone = await DatabaseHelper.getAgreementDone();
+          final dataTask = await DatabaseHelper.getAgreement();
+          setState(() {
+            taskLength = dataTask.length;
+
+            taskSync = dataSync.length;
+            taskDone = dataDone.length;
+            isLoading = false;
+          });
+        });
+      }
+    });
   }
 
   @override
@@ -134,8 +160,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   isLoading = false;
                 });
               }
-              if (state is TaskListError) {}
-              if (state is TaskListException) {}
+              if (state is TaskListError) {
+                if (!mounted) return;
+                GeneralUtil().showSnackBarError(context, state.error!);
+              }
+              if (state is TaskListException) {
+                if (!mounted) return;
+                GeneralUtil().showSnackBarError(context, state.error);
+              }
             },
             child: BlocBuilder(
                 bloc: taskListBloc,
@@ -146,7 +178,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (state is TaskListLoaded) {
                     return isLoading ? dailyTaskLoading() : dailyTask();
                   }
-                  return dailyTaskLoading();
+                  return isLoading ? dailyTaskLoading() : dailyTask();
                 })),
         const SizedBox(
           height: 24,
@@ -231,8 +263,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   isLoadingAchieve = false;
                 });
               }
-              if (state is DashboardError) {}
-              if (state is DashboardException) {}
+              if (state is DashboardError) {
+                if (!mounted) return;
+                GeneralUtil().showSnackBarError(context, state.error!);
+              }
+              if (state is DashboardException) {
+                if (!mounted) return;
+                GeneralUtil().showSnackBarError(context, state.error);
+              }
             },
             child: BlocBuilder(
                 bloc: dashboardBloc,
@@ -737,6 +775,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget dailyTask() {
+    var completed = taskDone / taskLength;
+    var sync = taskSync / taskDone;
     return Padding(
       padding: const EdgeInsets.only(left: 16.0, right: 16.0),
       child: Column(
@@ -785,7 +825,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: CircularPercentIndicator(
                     radius: 70.0,
                     lineWidth: 18.0,
-                    percent: 0.8,
+                    percent: completed,
                     center: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -824,7 +864,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: CircularPercentIndicator(
                     radius: 70.0,
                     lineWidth: 18.0,
-                    percent: 0.9,
+                    percent: sync,
                     center: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [

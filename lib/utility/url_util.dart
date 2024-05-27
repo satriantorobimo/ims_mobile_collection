@@ -69,7 +69,8 @@ class UrlUtil {
     return baseUrl + getUrlUpdate2;
   }
 
-  static String urlAmortization() => 'api/Agreement/GetAmortization';
+  static String urlAmortization() =>
+      'api/mobcoll_api/api/Agreement/GetAmortization';
 
   String getUrlAmortization() {
     final String getUrlAmortization2 = urlAmortization();

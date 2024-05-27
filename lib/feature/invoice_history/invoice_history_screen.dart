@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
-import 'package:mobile_collection/components/color_comp.dart';
 import 'package:mobile_collection/feature/assignment/data/task_list_response_model.dart';
 import 'package:mobile_collection/feature/invoice_history/bloc/history_bloc/bloc.dart';
 import 'package:mobile_collection/feature/invoice_history/domain/repo/history_repo.dart';
 import 'package:mobile_collection/utility/drop_down_util.dart';
 import 'package:mobile_collection/utility/general_util.dart';
+import 'package:shimmer/shimmer.dart';
 
 class InvoiceHistoryScreen extends StatefulWidget {
   const InvoiceHistoryScreen({super.key, required this.agreementList});
@@ -24,7 +22,6 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
   TextEditingController ctrlAmount = TextEditingController();
   TextEditingController ctrlRemark = TextEditingController();
   TextEditingController ctrlDate = TextEditingController();
-  DateTime? _selectedDate = DateTime.now();
   String dateSend = '';
   HistoryBloc historyBloc = HistoryBloc(historyRepo: HistoryRepo());
   var filterSelect = 0;
@@ -47,27 +44,6 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
     super.initState();
   }
 
-  void _presentDatePicker() {
-    showDatePicker(
-            initialEntryMode: DatePickerEntryMode.calendarOnly,
-            context: context,
-            initialDate: DateTime.now(),
-            lastDate: DateTime.now().add(const Duration(days: 7)),
-            firstDate: DateTime.now())
-        .then((pickedDate) {
-      if (pickedDate == null) {
-        return;
-      }
-      setState(() {
-        _selectedDate = pickedDate;
-        setState(() {
-          ctrlDate.text = DateFormat('dd MMMM yyyy').format(_selectedDate!);
-          dateSend = DateFormat('yyyy-MM-dd').format(_selectedDate!);
-        });
-      });
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -83,7 +59,7 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
         ),
         centerTitle: true,
         elevation: 0,
-        backgroundColor: Color(0xFF9BBFB6),
+        backgroundColor: const Color(0xFF9BBFB6),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -94,22 +70,22 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Invoice Detail',
                     style: TextStyle(
                         color: Colors.black,
                         fontSize: 18,
                         fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   SizedBox(
                     height: 75,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Asset Name',
-                          style: const TextStyle(
+                          style: TextStyle(
                               color: Colors.black,
                               fontSize: 14,
                               fontWeight: FontWeight.w600),
@@ -122,7 +98,7 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                             borderRadius: BorderRadius.circular(10),
                             border:
                                 Border.all(color: Colors.grey.withOpacity(0.1)),
-                            color: Color(0xFFFBFBFB),
+                            color: const Color(0xFFFBFBFB),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.grey.withOpacity(0.1),
@@ -136,7 +112,7 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                           child: Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
-                              'Honda HR-V SE CVT',
+                              widget.agreementList.vehicleDescription!,
                               style: const TextStyle(
                                   color: Color(0xFF565656),
                                   fontSize: 14,
@@ -147,15 +123,15 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                       ],
                     ),
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   SizedBox(
                     height: 75,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Agreement No',
-                          style: const TextStyle(
+                          style: TextStyle(
                               color: Colors.black,
                               fontSize: 14,
                               fontWeight: FontWeight.w600),
@@ -168,7 +144,7 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                             borderRadius: BorderRadius.circular(10),
                             border:
                                 Border.all(color: Colors.grey.withOpacity(0.1)),
-                            color: Color(0xFFFBFBFB),
+                            color: const Color(0xFFFBFBFB),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.grey.withOpacity(0.1),
@@ -182,7 +158,7 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                           child: Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
-                              '0000240300057',
+                              widget.agreementList.agreementNo!,
                               style: const TextStyle(
                                   color: Color(0xFF565656),
                                   fontSize: 14,
@@ -193,15 +169,15 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                       ],
                     ),
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   SizedBox(
                     height: 75,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Installment Amount',
-                          style: const TextStyle(
+                          style: TextStyle(
                               color: Colors.black,
                               fontSize: 14,
                               fontWeight: FontWeight.w600),
@@ -214,7 +190,7 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                             borderRadius: BorderRadius.circular(10),
                             border:
                                 Border.all(color: Colors.grey.withOpacity(0.1)),
-                            color: Color(0xFFFBFBFB),
+                            color: const Color(0xFFFBFBFB),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.grey.withOpacity(0.1),
@@ -228,7 +204,10 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                           child: Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
-                              'Rp. 7.000.000,00',
+                              GeneralUtil.convertToIdr(
+                                  widget
+                                      .agreementList.overdueInstallmentAmount!,
+                                  2),
                               style: const TextStyle(
                                   color: Color(0xFF565656),
                                   fontSize: 14,
@@ -239,43 +218,84 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                       ],
                     ),
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                 ],
               ),
             ),
             Container(
               width: double.infinity,
               height: 16,
-              color: Color(0xFFE7E7E7),
+              color: const Color(0xFFE7E7E7),
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Padding(
               padding:
                   const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 8.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Collection History',
                     style: TextStyle(
                         color: Colors.black,
                         fontSize: 18,
                         fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   BlocListener(
                       bloc: historyBloc,
                       listener: (_, HistoryState state) async {
                         if (state is HistoryLoading) {}
                         if (state is HistoryLoaded) {}
-                        if (state is HistoryError) {}
-                        if (state is HistoryException) {}
+                        if (state is HistoryError) {
+                          if (!mounted) return;
+                          GeneralUtil()
+                              .showSnackBarError(context, state.error!);
+                        }
+                        if (state is HistoryException) {
+                          if (!mounted) return;
+                          GeneralUtil().showSnackBarError(context, state.error);
+                        }
                       },
                       child: BlocBuilder(
                           bloc: historyBloc,
                           builder: (_, HistoryState state) {
                             if (state is HistoryLoading) {
-                              return Container();
+                              return Shimmer.fromColors(
+                                  baseColor: Colors.grey.shade300,
+                                  highlightColor: Colors.grey.shade100,
+                                  child: ListView.separated(
+                                      shrinkWrap: true,
+                                      itemCount: 3,
+                                      separatorBuilder:
+                                          (BuildContext context, int index) {
+                                        return const SizedBox(height: 8);
+                                      },
+                                      padding: const EdgeInsets.all(16),
+                                      itemBuilder:
+                                          (BuildContext context, int index) {
+                                        return Container(
+                                          height: 150,
+                                          width: double.infinity,
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(18),
+                                            border: Border.all(
+                                                color: Colors.grey
+                                                    .withOpacity(0.05)),
+                                            color: Colors.white,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.grey
+                                                    .withOpacity(0.1),
+                                                blurRadius: 6,
+                                                offset: const Offset(
+                                                    -6, 4), // Shadow position
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      }));
                             }
                             if (state is HistoryLoaded) {
                               return ListView.separated(
@@ -323,10 +343,13 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                                                                         index]
                                                                     .resultCode! ==
                                                                 'PAID'
-                                                            ? Color(0xFF70B96E)
-                                                            : Color(0xFFFF6C6C),
+                                                            ? const Color(
+                                                                0xFF70B96E)
+                                                            : const Color(
+                                                                0xFFFF6C6C),
                                                         borderRadius:
-                                                            BorderRadius.only(
+                                                            const BorderRadius
+                                                                .only(
                                                           topRight:
                                                               Radius.circular(
                                                                   18.0),
@@ -347,7 +370,7 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                                                                 .historyResponseModel
                                                                 .data![index]
                                                                 .resultCode!,
-                                                        style: TextStyle(
+                                                        style: const TextStyle(
                                                             fontSize: 13,
                                                             fontWeight:
                                                                 FontWeight.w300,
@@ -360,8 +383,8 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                                                   right: 16,
                                                   bottom: 16,
                                                   child: Text(
-                                                    '2',
-                                                    style: TextStyle(
+                                                    '${index + 1}',
+                                                    style: const TextStyle(
                                                         fontSize: 15,
                                                         fontWeight:
                                                             FontWeight.w500,
@@ -377,9 +400,9 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                                                   crossAxisAlignment:
                                                       CrossAxisAlignment.start,
                                                   children: [
-                                                    Text(
+                                                    const Text(
                                                       'Field Coll',
-                                                      style: const TextStyle(
+                                                      style: TextStyle(
                                                           fontSize: 15,
                                                           fontWeight:
                                                               FontWeight.bold,
@@ -405,7 +428,7 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                                                                 CrossAxisAlignment
                                                                     .start,
                                                             children: [
-                                                              Text(
+                                                              const Text(
                                                                 'Budi',
                                                                 style: TextStyle(
                                                                     fontSize:
@@ -418,7 +441,7 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                                                               ),
                                                               Row(
                                                                 children: [
-                                                                  Icon(
+                                                                  const Icon(
                                                                     Icons
                                                                         .calendar_today_rounded,
                                                                     size: 13,
@@ -428,8 +451,12 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                                                                   const SizedBox(
                                                                       width: 8),
                                                                   Text(
-                                                                    '19 - 04 - 2024',
-                                                                    style: TextStyle(
+                                                                    state
+                                                                            .historyResponseModel
+                                                                            .data![index]
+                                                                            .resultPromiseDate ??
+                                                                        '-',
+                                                                    style: const TextStyle(
                                                                         fontSize:
                                                                             12,
                                                                         fontWeight:
@@ -443,7 +470,13 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                                                               const SizedBox(
                                                                   height: 4),
                                                               Text(
-                                                                'Rp. 50.000.000',
+                                                                GeneralUtil.convertToIdr(
+                                                                    state
+                                                                        .historyResponseModel
+                                                                        .data![
+                                                                            index]
+                                                                        .resultPaymentAmount!,
+                                                                    2),
                                                                 style: const TextStyle(
                                                                     fontSize:
                                                                         12,
@@ -463,8 +496,11 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                                                                   .width *
                                                               0.42,
                                                           child: Text(
-                                                            'This is remark for remark for rem...',
-                                                            style: TextStyle(
+                                                            state
+                                                                .historyResponseModel
+                                                                .data![index]
+                                                                .resultRemarks!,
+                                                            style: const TextStyle(
                                                                 fontSize: 15,
                                                                 fontWeight:
                                                                     FontWeight
@@ -484,7 +520,41 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                                 },
                               );
                             }
-                            return Container();
+                            return Shimmer.fromColors(
+                                baseColor: Colors.grey.shade300,
+                                highlightColor: Colors.grey.shade100,
+                                child: ListView.separated(
+                                    shrinkWrap: true,
+                                    itemCount: 3,
+                                    separatorBuilder:
+                                        (BuildContext context, int index) {
+                                      return const SizedBox(height: 8);
+                                    },
+                                    padding: const EdgeInsets.all(16),
+                                    itemBuilder:
+                                        (BuildContext context, int index) {
+                                      return Container(
+                                        height: 150,
+                                        width: double.infinity,
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(18),
+                                          border: Border.all(
+                                              color: Colors.grey
+                                                  .withOpacity(0.05)),
+                                          color: Colors.white,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color:
+                                                  Colors.grey.withOpacity(0.1),
+                                              blurRadius: 6,
+                                              offset: const Offset(
+                                                  -6, 4), // Shadow position
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }));
                           })),
                 ],
               ),

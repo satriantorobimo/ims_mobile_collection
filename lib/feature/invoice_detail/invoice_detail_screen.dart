@@ -3,11 +3,14 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_collection/components/color_comp.dart';
 import 'package:mobile_collection/feature/assignment/data/task_list_response_model.dart';
 import 'package:mobile_collection/feature/invoice_detail/bloc/update_bloc/bloc.dart';
+import 'package:mobile_collection/feature/invoice_detail/data/attachment_model.dart';
 import 'package:mobile_collection/feature/invoice_detail/data/update_request_model.dart';
 import 'package:mobile_collection/feature/invoice_detail/domain/repo/update_repo.dart';
 import 'package:mobile_collection/utility/database_helper.dart';
@@ -15,6 +18,7 @@ import 'package:mobile_collection/utility/drop_down_util.dart';
 import 'package:mobile_collection/utility/general_util.dart';
 import 'package:mobile_collection/utility/network_util.dart';
 import 'package:mobile_collection/utility/string_router_util.dart';
+import 'package:path/path.dart' as path;
 
 class InvoiceDetailScreen extends StatefulWidget {
   const InvoiceDetailScreen({super.key, required this.agreementList});
@@ -42,8 +46,10 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
   TextEditingController ctrlDate = TextEditingController();
   DateTime? _selectedDate = DateTime.now();
   String dateSend = '';
+  String dateAttach = '';
   String collCode = '';
   var filterSelect = 0;
+  List<Attachment> attachment = [];
   Future<void> getStatus() async {
     setState(() {
       filter.add(const CustDropdownMenuItem(value: 0, child: Text("PAID")));
@@ -63,13 +69,16 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
   final InternetConnectionChecker internetConnectionChecker =
       InternetConnectionChecker();
 
-  Future<void> updateData(UpdateRequestModel data) async {
+  Future<void> updateData(UpdateRequestModel data, bool isOffline) async {
     await DatabaseHelper.updateAgreement(
         taskId: widget.agreementList.taskId,
         resultCode: data.pResultCode,
         resultPaymentAmount: data.pResultPaymentAmount.toString(),
         resultPromiseDate: data.pResultPromiseDate,
-        resultRemark: data.pResultRemarks);
+        resultRemark: data.pResultRemarks,
+        isSync: !isOffline ? 0 : 1);
+
+    await DatabaseHelper.insertAttachment(attachment);
   }
 
   @override
@@ -85,6 +94,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
     animationController!.repeat();
     setState(() {
       dateSend = DateFormat('yyyy-MM-dd').format(_selectedDate!);
+      dateAttach = DateFormat('dd MMM, yyyy').format(_selectedDate!);
     });
     getStatus();
     getData();
@@ -410,7 +420,13 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                         vertical: 16.0, horizontal: 16.0),
                     child: InkWell(
                       onTap: () {
-                        Navigator.pop(context);
+                        pickImage().then((value) {
+                          if (value == 'big') {
+                            GeneralUtil()
+                                .showSnackBarError(context, 'Size Maximal 5MB');
+                          }
+                          Navigator.pop(context);
+                        });
                       },
                       child: Row(
                         children: const [
@@ -454,6 +470,39 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
         });
   }
 
+  Future<String> pickImage() async {
+    try {
+      var maxFileSizeInBytes = 5 * 1048576;
+      ImagePicker imagePicker = ImagePicker();
+      XFile? pickedImage = await imagePicker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 90,
+      );
+      if (pickedImage == null) return 'notselect';
+
+      var imagePath = await pickedImage.readAsBytes();
+      var fileSize = imagePath.length; // Get the file size in bytes
+      if (fileSize <= maxFileSizeInBytes) {
+        setState(() {
+          attachment.add(Attachment(
+              taskId: widget.agreementList.taskId!,
+              path: pickedImage.path,
+              ext: path.extension(path.basename(pickedImage.path)),
+              basename: path.basename(pickedImage.path),
+              date: dateAttach,
+              size: (fileSize / 1000).toString()));
+        });
+      } else {
+        return 'big';
+      }
+
+      return 'yes';
+    } on PlatformException catch (e) {
+      log('Failed to pick image: $e');
+      return 'notselect';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -479,7 +528,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
         ),
         centerTitle: true,
         elevation: 0,
-        backgroundColor: Color(0xFF9BBFB6),
+        backgroundColor: const Color(0xFF9BBFB6),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -495,9 +544,9 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Asset Name',
-                          style: const TextStyle(
+                          style: TextStyle(
                               color: Colors.black,
                               fontSize: 14,
                               fontWeight: FontWeight.w600),
@@ -510,7 +559,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                             borderRadius: BorderRadius.circular(10),
                             border:
                                 Border.all(color: Colors.grey.withOpacity(0.1)),
-                            color: Color(0xFFFBFBFB),
+                            color: const Color(0xFFFBFBFB),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.grey.withOpacity(0.1),
@@ -535,15 +584,15 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                       ],
                     ),
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   SizedBox(
                     height: 75,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Agreement No',
-                          style: const TextStyle(
+                          style: TextStyle(
                               color: Colors.black,
                               fontSize: 14,
                               fontWeight: FontWeight.w600),
@@ -556,7 +605,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                             borderRadius: BorderRadius.circular(10),
                             border:
                                 Border.all(color: Colors.grey.withOpacity(0.1)),
-                            color: Color(0xFFFBFBFB),
+                            color: const Color(0xFFFBFBFB),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.grey.withOpacity(0.1),
@@ -581,15 +630,15 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                       ],
                     ),
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   SizedBox(
                     height: 75,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Installment Amount',
-                          style: const TextStyle(
+                          style: TextStyle(
                               color: Colors.black,
                               fontSize: 14,
                               fontWeight: FontWeight.w600),
@@ -602,7 +651,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                             borderRadius: BorderRadius.circular(10),
                             border:
                                 Border.all(color: Colors.grey.withOpacity(0.1)),
-                            color: Color(0xFFFBFBFB),
+                            color: const Color(0xFFFBFBFB),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.grey.withOpacity(0.1),
@@ -630,15 +679,15 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                       ],
                     ),
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   SizedBox(
                     height: 75,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Installment Due Date',
-                          style: const TextStyle(
+                          style: TextStyle(
                               color: Colors.black,
                               fontSize: 14,
                               fontWeight: FontWeight.w600),
@@ -651,7 +700,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                             borderRadius: BorderRadius.circular(10),
                             border:
                                 Border.all(color: Colors.grey.withOpacity(0.1)),
-                            color: Color(0xFFFBFBFB),
+                            color: const Color(0xFFFBFBFB),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.grey.withOpacity(0.1),
@@ -676,15 +725,15 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                       ],
                     ),
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   SizedBox(
                     height: 75,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Overdue Days',
-                          style: const TextStyle(
+                          style: TextStyle(
                               color: Colors.black,
                               fontSize: 14,
                               fontWeight: FontWeight.w600),
@@ -697,7 +746,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                             borderRadius: BorderRadius.circular(10),
                             border:
                                 Border.all(color: Colors.grey.withOpacity(0.1)),
-                            color: Color(0xFFFBFBFB),
+                            color: const Color(0xFFFBFBFB),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.grey.withOpacity(0.1),
@@ -722,41 +771,41 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                       ],
                     ),
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                 ],
               ),
             ),
             Container(
               width: double.infinity,
               height: 16,
-              color: Color(0xFFE7E7E7),
+              color: const Color(0xFFE7E7E7),
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Padding(
               padding:
                   const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 8.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Result',
                     style: TextStyle(
                         color: Colors.black,
                         fontSize: 18,
                         fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'Status',
                         style: TextStyle(
                             color: Colors.black,
                             fontSize: 14,
                             fontWeight: FontWeight.w700),
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Container(
                         width: MediaQuery.of(context).size.width,
                         height: 45,
@@ -787,13 +836,13 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                       ),
                     ],
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   Visibility(
                     visible: filterSelect == 0 || filterSelect == 1,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Payment Amount',
                           style: TextStyle(
                               color: Colors.black,
@@ -854,13 +903,13 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                   ),
                   Visibility(
                       visible: filterSelect == 0 || filterSelect == 1,
-                      child: SizedBox(height: 12)),
+                      child: const SizedBox(height: 12)),
                   Visibility(
                     visible: filterSelect == 2,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Promise Date',
                           style: TextStyle(
                               color: Colors.black,
@@ -901,7 +950,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                       ],
                     ),
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -956,7 +1005,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                       ),
                     ],
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -999,43 +1048,109 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Container(
-                        width: MediaQuery.of(context).size.width,
-                        height: 123,
-                        padding: EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                            color: Color(0xFFFBFBFB),
-                            border: Border.all(color: Color(0xFFEAEAEA)),
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(10))),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Center(
-                                child: Icon(
-                              Icons.camera_alt_outlined,
-                              size: 35,
-                            )),
-                            Text(
-                              'No Attachment',
-                              style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500),
-                            ),
-                          ],
-                        ),
-                      )
+                      attachment.isEmpty
+                          ? Container(
+                              width: MediaQuery.of(context).size.width,
+                              height: 123,
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                  color: const Color(0xFFFBFBFB),
+                                  border: Border.all(
+                                      color: const Color(0xFFEAEAEA)),
+                                  borderRadius: const BorderRadius.all(
+                                      Radius.circular(10))),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: const [
+                                  Center(
+                                      child: Icon(
+                                    Icons.camera_alt_outlined,
+                                    size: 35,
+                                  )),
+                                  Text(
+                                    'No Attachment',
+                                    style: TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : Container(
+                              width: MediaQuery.of(context).size.width,
+                              height: 75,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                  color: const Color(0xFFF8FAFE),
+                                  border: Border.all(
+                                      color: const Color(0xFFF8FAFE)),
+                                  borderRadius: const BorderRadius.all(
+                                      Radius.circular(10))),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      SvgPicture.asset(
+                                        'assets/icon/file.svg',
+                                        height: 28,
+                                        width: 28,
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            'File 0${attachment[0].ext}',
+                                            style: const TextStyle(
+                                                color: Colors.black,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500),
+                                          ),
+                                          Text(
+                                            '${attachment[0].size} KB . ${attachment[0].date}  ',
+                                            style: const TextStyle(
+                                                color: Color(0xFF71839B),
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w400),
+                                          ),
+                                        ],
+                                      )
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      SvgPicture.asset(
+                                        'assets/icon/download.svg',
+                                        height: 20,
+                                        width: 20,
+                                      ),
+                                      const SizedBox(width: 16),
+                                      SvgPicture.asset(
+                                        'assets/icon/trash.svg',
+                                        height: 20,
+                                        width: 20,
+                                      ),
+                                    ],
+                                  )
+                                ],
+                              ),
+                            )
                     ],
                   ),
-                  SizedBox(height: 24),
+                  const SizedBox(height: 24),
                   BlocListener(
                       bloc: updateBloc,
                       listener: (_, UpdateState state) async {
                         if (state is UpdateLoading) {}
                         if (state is UpdateLoaded) {
                           Navigator.pop(context);
-                          updateData(updateRequestModel).then((value) {
+                          updateData(updateRequestModel, true).then((value) {
                             Navigator.pop(context);
                             goHome();
                           });
@@ -1102,7 +1217,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                                           : paidAmountValue);
                                   updateRequestModel.pResultPromiseDate =
                                       dateSend;
-                                  updateRequestModel.pId =
+                                  updateRequestModel.pTaskId =
                                       widget.agreementList.taskId;
                                   updateRequestModel.pResultRemarks =
                                       ctrlRemark.text;
@@ -1134,7 +1249,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                                           : paidAmountValue);
                                   updateRequestModel.pResultPromiseDate =
                                       dateSend;
-                                  updateRequestModel.pId =
+                                  updateRequestModel.pTaskId =
                                       widget.agreementList.taskId;
                                   updateRequestModel.pResultRemarks =
                                       ctrlRemark.text;
@@ -1165,7 +1280,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                                         : paidAmountValue);
                                 updateRequestModel.pResultPromiseDate =
                                     dateSend;
-                                updateRequestModel.pId =
+                                updateRequestModel.pTaskId =
                                     widget.agreementList.taskId;
                                 updateRequestModel.pResultRemarks =
                                     ctrlRemark.text;
@@ -1182,7 +1297,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                                     });
                                   } else {
                                     setState(() async {
-                                      updateData(updateRequestModel)
+                                      updateData(updateRequestModel, false)
                                           .then((value) {
                                         Navigator.pop(context);
                                         goHomeDraft();

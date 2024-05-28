@@ -44,9 +44,10 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
 
   @override
   void initState() {
+    getCurrentLocation();
     getStatus();
     getData();
-    // getCurrentLocation();
+
     super.initState();
   }
 
@@ -56,25 +57,28 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
 
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
+      permission = await Geolocator.requestPermission();
       return Future.error('Location services are disabled.');
-    }
+    } else {
+      permission = await Geolocator.checkPermission();
 
-    permission = await Geolocator.checkPermission();
-    permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          return Future.error('Location permissions are denied');
+        }
+      }
 
-    if (permission == LocationPermission.denied) {
-      return Future.error('Location permissions are denied');
+      if (permission == LocationPermission.deniedForever) {
+        return Future.error(
+            'Location permissions are permanently denied, we cannot request permissions.');
+      }
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+      setState(() {
+        _currentPosition = position;
+      });
     }
-
-    if (permission == LocationPermission.deniedForever) {
-      return Future.error(
-          'Location permissions are permanently denied, we cannot request permissions.');
-    }
-    Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high);
-    setState(() {
-      _currentPosition = position;
-    });
   }
 
   Future<void> getData() async {
@@ -105,6 +109,17 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
           });
         });
       }
+    });
+  }
+
+  void filterSearchResults(String query) {
+    setState(() {
+      dataFilterSearch = data
+          .where((item) =>
+              item.clientName!.toLowerCase().contains(query.toLowerCase()) ||
+              item.clientNo!.toLowerCase().contains(query.toLowerCase()))
+          .toList();
+      dataFilter = dataFilterSearch;
     });
   }
 
@@ -196,7 +211,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                 child: TextFormField(
                   keyboardType: TextInputType.text,
                   onChanged: (value) {
-                    // filterSearchResults(value);
+                    filterSearchResults(value);
                   },
                   decoration: InputDecoration(
                       hintText: 'search record',
@@ -371,8 +386,8 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                                                     height: 30,
                                                     decoration: BoxDecoration(
                                                         color: dataFilter[index]
-                                                                    .invoiceCount! >
-                                                                0
+                                                                    .taskStatus! !=
+                                                                'COMPLETED'
                                                             ? const Color(
                                                                 0xFFFF6969)
                                                             : const Color(
@@ -390,10 +405,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                                                     child: Center(
                                                       child: Text(
                                                         dataFilter[index]
-                                                                    .invoiceCount! >
-                                                                0
-                                                            ? 'Unfinished'
-                                                            : 'Completed',
+                                                            .taskStatus!,
                                                         style: const TextStyle(
                                                             fontSize: 13,
                                                             fontWeight:
@@ -566,7 +578,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                                                                           .longitude! ==
                                                                       ''
                                                               ? '0 km'
-                                                              : '${GeneralUtil().calculateDistance(-6.2288788, 106.6570876, double.parse(dataFilter[index].latitude!), double.parse(dataFilter[index].longitude!))} km',
+                                                              : '${GeneralUtil().calculateDistance(_currentPosition.latitude, _currentPosition.longitude, double.parse(dataFilter[index].latitude!), double.parse(dataFilter[index].longitude!)).toStringAsFixed(2)} km',
                                                           style:
                                                               const TextStyle(
                                                                   fontSize: 12,
@@ -683,8 +695,8 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                                                   height: 30,
                                                   decoration: BoxDecoration(
                                                       color: dataFilter[index]
-                                                                  .invoiceCount! >
-                                                              0
+                                                                  .taskStatus! !=
+                                                              'COMPLETED'
                                                           ? const Color(
                                                               0xFFFF6969)
                                                           : const Color(
@@ -702,10 +714,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                                                   child: Center(
                                                     child: Text(
                                                       dataFilter[index]
-                                                                  .invoiceCount! >
-                                                              0
-                                                          ? 'Unfinished'
-                                                          : 'Completed',
+                                                          .taskStatus!,
                                                       style: const TextStyle(
                                                           fontSize: 13,
                                                           fontWeight:

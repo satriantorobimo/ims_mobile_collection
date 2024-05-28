@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile_collection/components/color_comp.dart';
 import 'package:mobile_collection/feature/login/bloc/auth_bloc/bloc.dart';
 import 'package:mobile_collection/feature/login/data/auth_response_model.dart';
+import 'package:mobile_collection/feature/login/data/login_model.dart';
 import 'package:mobile_collection/feature/login/domain/repo/auth_repo.dart';
 import 'package:mobile_collection/utility/database_helper.dart';
 import 'package:mobile_collection/utility/shared_pref_util.dart';
@@ -349,12 +351,19 @@ class _FormWidgetState extends State<FormWidget> {
               if (state is AuthLoaded) {
                 if (state.authResponseModel.datalist != null) {
                   _processDb(state.authResponseModel.datalist![0])
-                      .then((value) {
-                    setState(() {
-                      isLoading = false;
-                    });
+                      .then((value) async {
+                    await DatabaseHelper.getDateLogin();
+                    DateTime? selectedDate = DateTime.now();
+                    var dateNows =
+                        DateFormat('dd-MM-yyyy').format(selectedDate);
+                    List<LoginModel> loginModel = [];
+                    loginModel.add(LoginModel(
+                        date: dateNows,
+                        uid: state.authResponseModel.datalist![0].uid!));
+                    await DatabaseHelper.insertDateLogin(loginModel);
                     SharedPrefUtil.saveSharedString(
                         'token', state.authResponseModel.token!);
+                    if (!mounted) return;
                     Navigator.pushNamedAndRemoveUntil(context,
                         StringRouterUtil.tabScreenRoute, (route) => false);
                   });

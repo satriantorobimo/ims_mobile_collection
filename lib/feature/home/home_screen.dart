@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile_collection/feature/assignment/domain/repo/task_repo.dart';
 import 'package:mobile_collection/feature/home/bloc/dashboard_bloc/bloc.dart';
 import 'package:mobile_collection/feature/home/data/dashboard_response_model.dart';
@@ -77,6 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> getData() async {
     final data = await DatabaseHelper.getUserData();
+
     NetworkInfo(internetConnectionChecker).isConnected.then((value) {
       if (value) {
         setState(() {
@@ -144,6 +146,14 @@ class _HomeScreenState extends State<HomeScreen> {
             listener: (_, TaskListState state) async {
               if (state is TaskListLoading) {}
               if (state is TaskListLoaded) {
+                final data = await DatabaseHelper.getDateLogin();
+                DateTime? selectedDate = DateTime.now();
+                var dateNows = DateFormat('dd-MM-yyyy').format(selectedDate);
+                if (dateNows.compareTo(data[0]['date']) != 0) {
+                  await DatabaseHelper.deleteData();
+                  await DatabaseHelper.updateDateLogin(
+                      date: dateNows, uid: data[0]['uid']);
+                }
                 await DatabaseHelper.insertCust(
                     state.taskListResponseModel.data!);
                 for (var val in state.taskListResponseModel.data!) {

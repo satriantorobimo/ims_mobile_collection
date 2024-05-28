@@ -1,6 +1,8 @@
 import 'dart:developer' as dev;
 import 'package:flutter/material.dart';
+import 'package:mobile_collection/feature/invoice_detail/data/attachment_model.dart';
 import 'package:mobile_collection/feature/login/data/auth_response_model.dart';
+import 'package:mobile_collection/feature/login/data/login_model.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite/sqflite.dart' as sql;
 import 'package:synchronized/synchronized.dart';
@@ -33,10 +35,19 @@ class DatabaseHelper {
       )
       """);
 
+    await database.execute("""CREATE TABLE datelogin(
+        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+        date TEXT,
+        uid TEXT
+      )
+      """);
+
     await database.execute("""CREATE TABLE cust(
         client_no TEXT PRIMARY KEY,
         client_name TEXT,
         invoice_count INTEGER,
+        task_date TEXT,
+        task_status TEXT,
         phone_no_1 TEXT,
         phone_no_2 TEXT,
         overdue_installment DOUBLE,
@@ -122,12 +133,23 @@ class DatabaseHelper {
         monthly_target TEXT
       )
       """);
+
+    await database.execute("""CREATE TABLE attachment(
+        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+        task_id INTEGER,
+        path TEXT,
+        basename TEXT,
+        ext TEXT,
+        size TEXT,
+        date TEXT
+      )
+      """);
   }
 
   static Future<sql.Database> db() async {
     return sql.openDatabase(
       'salesorder.db',
-      version: 6,
+      version: 8,
       onCreate: (sql.Database database, int version) async {
         await createTables(database);
       },
@@ -142,7 +164,47 @@ class DatabaseHelper {
         Batch batch = db.batch();
         for (var val in data) {
           batch.insert('cust', val.toMap(),
-              conflictAlgorithm: sql.ConflictAlgorithm.ignore);
+              conflictAlgorithm: sql.ConflictAlgorithm.replace);
+        }
+        batch.commit();
+        await db.close();
+      } catch (e) {
+        dev.log('Error $e');
+      }
+    });
+
+    //  return _lock.synchronized(() async{});
+  }
+
+  // Insert Cust
+  static Future<void> insertDateLogin(List<LoginModel> data) async {
+    return _lock.synchronized(() async {
+      try {
+        final db = await DatabaseHelper.db();
+        Batch batch = db.batch();
+        for (var val in data) {
+          batch.insert('datelogin', val.toMap(),
+              conflictAlgorithm: sql.ConflictAlgorithm.replace);
+        }
+        batch.commit();
+        await db.close();
+      } catch (e) {
+        dev.log('Error $e');
+      }
+    });
+
+    //  return _lock.synchronized(() async{});
+  }
+
+  // Insert Attachment
+  static Future<void> insertAttachment(List<Attachment> data) async {
+    return _lock.synchronized(() async {
+      try {
+        final db = await DatabaseHelper.db();
+        Batch batch = db.batch();
+        for (var val in data) {
+          batch.insert('attachment', val.toMap(),
+              conflictAlgorithm: sql.ConflictAlgorithm.replace);
         }
         batch.commit();
         await db.close();
@@ -311,6 +373,19 @@ class DatabaseHelper {
     });
   }
 
+  // Read all attachment
+  static Future<List<Attachment>> getAttachment(String taskId) async {
+    return _lock.synchronized(() async {
+      final db = await DatabaseHelper.db();
+      List<Map<String, dynamic>> maps = await db
+          .query('attachment', where: "task_id != ?", whereArgs: [taskId]);
+      await db.close();
+      return List.generate(maps.length, (i) {
+        return Attachment.fromMap(maps[i]);
+      });
+    });
+  }
+
   // Read all agreement
   static Future<List<dshb.DailyTaskStatus>> getDailyStatus() async {
     return _lock.synchronized(() async {
@@ -417,19 +492,32 @@ class DatabaseHelper {
       String? resultCode,
       String? resultRemark,
       String? resultPromiseDate,
-      String? resultPaymentAmount}) async {
+      String? resultPaymentAmount,
+      int? isSync}) async {
     return _lock.synchronized(() async {
       final db = await DatabaseHelper.db();
 
       await db.rawUpdate(
-          'UPDATE agreement SET result_code = ?, result_remarks = ?, result_promise_date = ?, result_payment_amount = ?  WHERE task_id = ?',
+          'UPDATE agreement SET result_code = ?, result_remarks = ?, result_promise_date = ?, result_payment_amount = ?, sync = ?  WHERE task_id = ?',
           [
             resultCode,
             resultRemark,
             resultPromiseDate,
             resultPaymentAmount,
+            isSync,
             taskId
           ]);
+      await db.close();
+    });
+  }
+
+  // Update an task by id
+  static Future<void> updateDateLogin({String? date, String? uid}) async {
+    return _lock.synchronized(() async {
+      final db = await DatabaseHelper.db();
+
+      await db.rawUpdate(
+          'UPDATE datelogin SET date = ?  WHERE uid = ?', [date, uid]);
       await db.close();
     });
   }
@@ -439,6 +527,14 @@ class DatabaseHelper {
     return _lock.synchronized(() async {
       final db = await DatabaseHelper.db();
       return db.query('user', limit: 1);
+    });
+  }
+
+  // User Data by ID
+  static Future<List<Map<String, dynamic>>> getDateLogin() async {
+    return _lock.synchronized(() async {
+      final db = await DatabaseHelper.db();
+      return db.query('datelogin', limit: 1);
     });
   }
 
@@ -456,6 +552,25 @@ class DatabaseHelper {
       final db = await DatabaseHelper.db();
       try {
         await db.delete('user');
+      } catch (err) {
+        debugPrint("Something went wrong when deleting an item: $err");
+      }
+    });
+  }
+
+  // Delete
+  static Future<void> deleteData() async {
+    return _lock.synchronized(() async {
+      final db = await DatabaseHelper.db();
+      try {
+        await db.delete('cust');
+        await db.delete('agreement');
+        await db.delete('amortization');
+        await db.delete('paymentlist');
+        await db.delete('history');
+        await db.delete('dailystatus');
+        await db.delete('achieve');
+        await db.delete('attachment');
       } catch (err) {
         debugPrint("Something went wrong when deleting an item: $err");
       }

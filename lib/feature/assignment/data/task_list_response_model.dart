@@ -46,6 +46,8 @@ class Data {
   String? clientNo;
   String? clientName;
   int? invoiceCount;
+  String? taskDate;
+  String? taskStatus;
   String? phoneNo1;
   String? phoneNo2;
   double? overdueInstallment;
@@ -66,6 +68,8 @@ class Data {
       {this.clientNo,
       this.clientName,
       this.invoiceCount,
+      this.taskDate,
+      this.taskStatus,
       this.phoneNo1,
       this.phoneNo2,
       this.overdueInstallment,
@@ -86,6 +90,8 @@ class Data {
     clientNo = json['client_no'];
     clientName = json['client_name'];
     invoiceCount = json['invoice_count'];
+    taskDate = json['task_date'];
+    taskStatus = json['task_status'];
     phoneNo1 = json['phone_no_1'];
     phoneNo2 = json['phone_no_2'];
     overdueInstallment = json['overdue_installment'];
@@ -113,6 +119,8 @@ class Data {
     data['client_no'] = clientNo;
     data['client_name'] = clientName;
     data['invoice_count'] = invoiceCount;
+    data['task_date'] = taskDate;
+    data['task_status'] = taskStatus;
     data['phone_no_1'] = phoneNo1;
     data['phone_no_2'] = phoneNo2;
     data['overdue_installment'] = overdueInstallment;
@@ -138,6 +146,8 @@ class Data {
       'client_no': clientNo,
       'client_name': clientName,
       'invoice_count': invoiceCount,
+      'task_date': taskDate,
+      'task_status': taskStatus,
       'phone_no_1': phoneNo1,
       'phone_no_2': phoneNo2,
       'overdue_installment': overdueInstallment,
@@ -160,6 +170,8 @@ class Data {
       clientNo: map['client_no'],
       clientName: map['client_name'],
       invoiceCount: map['invoice_count'],
+      taskDate: map['task_date'],
+      taskStatus: map['task_status'],
       phoneNo1: map['phone_no_1'],
       phoneNo2: map['phone_no_2'],
       overdueInstallment: map['overdue_installment'],

@@ -48,6 +48,31 @@ class GeneralUtil {
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
+  void showSnackBarSync(BuildContext context, String msg) {
+    final snackBar = SnackBar(
+      content: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            msg,
+            style: const TextStyle(
+                fontSize: 13, color: Colors.black, fontWeight: FontWeight.w400),
+          ),
+          const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(),
+          )
+        ],
+      ),
+      backgroundColor: Colors.orange,
+      behavior: SnackBarBehavior.floating,
+      padding: const EdgeInsets.all(8),
+      duration: const Duration(days: 365),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
   String encodeId(String userId) {
 // userId ini adalah usercode/username yang digunakan untuk login
 // reverse userId string

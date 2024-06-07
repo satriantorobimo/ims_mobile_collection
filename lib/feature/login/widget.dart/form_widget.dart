@@ -7,6 +7,7 @@ import 'package:mobile_collection/feature/login/data/auth_response_model.dart';
 import 'package:mobile_collection/feature/login/data/login_model.dart';
 import 'package:mobile_collection/feature/login/domain/repo/auth_repo.dart';
 import 'package:mobile_collection/utility/database_helper.dart';
+import 'package:mobile_collection/utility/firebase_notification_service.dart';
 import 'package:mobile_collection/utility/shared_pref_util.dart';
 import 'package:mobile_collection/utility/string_router_util.dart';
 
@@ -357,6 +358,9 @@ class _FormWidgetState extends State<FormWidget> {
                     var dateNows =
                         DateFormat('dd-MM-yyyy').format(selectedDate);
                     List<LoginModel> loginModel = [];
+                    final FirebaseNotificationService firebaseNotificationService =
+                    FirebaseNotificationService();
+                    await firebaseNotificationService.fcmSubscribe(state.authResponseModel.datalist![0].uid!);
                     loginModel.add(LoginModel(
                         date: dateNows,
                         uid: state.authResponseModel.datalist![0].uid!));

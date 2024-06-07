@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -7,13 +5,14 @@ import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_collection/feature/assignment/domain/repo/task_repo.dart';
 import 'package:mobile_collection/feature/home/bloc/dashboard_bloc/bloc.dart';
-import 'package:mobile_collection/feature/home/data/dashboard_response_model.dart';
 import 'package:mobile_collection/feature/home/domain/repo/dashboard_repo.dart';
+import 'package:mobile_collection/feature/home/provider/home_provider.dart';
 import 'package:mobile_collection/utility/database_helper.dart';
 import 'package:mobile_collection/utility/drop_down_util.dart';
 import 'package:mobile_collection/utility/general_util.dart';
 import 'package:mobile_collection/utility/network_util.dart';
 import 'package:percent_indicator/percent_indicator.dart';
+import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import '../assignment/bloc/task_bloc/bloc.dart';
 import 'widget/header_tab_widget.dart';
@@ -26,7 +25,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  var filterSelect = 0;
   int taskLength = 0;
   int taskDone = 0;
   int taskSync = 0;
@@ -63,9 +61,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> getStatus() async {
     setState(() {
+      filter.add(const CustDropdownMenuItem(value: 0, child: Text("Daily")));
       filter
-          .add(const CustDropdownMenuItem(value: 0, child: Text("This Month")));
-      filter.add(const CustDropdownMenuItem(value: 1, child: Text("Daily")));
+          .add(const CustDropdownMenuItem(value: 1, child: Text("This Month")));
     });
   }
 
@@ -300,6 +298,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget achievement() {
+    var homeProvider = Provider.of<HomeProvider>(context);
+    int selectFilter = homeProvider.filterSelect;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -527,7 +527,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   defaultSelectedIndex: 0,
                   onChanged: (val) {
                     setState(() {
-                      filterSelect = val;
+                      selectFilter = val;
                     });
                   },
                 ),
@@ -570,7 +570,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            filterSelect == 0 ? monthCountCust : dailyCountCust,
+                            selectFilter == 1 ? monthCountCust : dailyCountCust,
                             style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
@@ -604,7 +604,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      filterSelect == 0
+                                      selectFilter == 1
                                           ? monthTargetCust
                                           : dailyTargetCust,
                                       style: const TextStyle(
@@ -649,7 +649,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            filterSelect == 0 ? monthCountInv : dailyCountInv,
+                            selectFilter == 1 ? monthCountInv : dailyCountInv,
                             style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
@@ -683,7 +683,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      filterSelect == 0
+                                      selectFilter == 1
                                           ? monthTargetInv
                                           : dailyTargetInv,
                                       style: const TextStyle(
@@ -728,7 +728,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            filterSelect == 0 ? monthCountCa : dailyCountCa,
+                            selectFilter == 1 ? monthCountCa : dailyCountCa,
                             style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
@@ -762,7 +762,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      filterSelect == 0
+                                      selectFilter == 1
                                           ? monthTargetCa
                                           : dailyTargetCa,
                                       style: const TextStyle(

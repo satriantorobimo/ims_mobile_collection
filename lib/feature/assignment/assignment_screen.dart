@@ -44,10 +44,8 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
 
   @override
   void initState() {
-    getCurrentLocation();
     getStatus();
     getData();
-
     super.initState();
   }
 
@@ -83,6 +81,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
 
   Future<void> getData() async {
     final datas = await DatabaseHelper.getUserData();
+    await getCurrentLocation();
 
     NetworkInfo(internetConnectionChecker).isConnected.then((value) {
       if (value) {

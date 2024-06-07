@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:map_launcher/map_launcher.dart' as maps;
+import 'package:mobile_collection/components/color_comp.dart';
 import 'package:mobile_collection/feature/assignment/data/task_list_response_model.dart';
 import 'package:mobile_collection/utility/general_util.dart';
 import 'package:mobile_collection/utility/string_router_util.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TaskDetailScreen extends StatefulWidget {
   const TaskDetailScreen({super.key, required this.data});
+
   final Data data;
 
   @override
@@ -13,7 +21,17 @@ class TaskDetailScreen extends StatefulWidget {
 }
 
 class _TaskDetailScreenState extends State<TaskDetailScreen> {
-  Future<void> _showBottomCall(BuildContext context) {
+  late Position _currentPosition;
+  maps.DirectionsMode directionsMode = maps.DirectionsMode.driving;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    getCurrentLocation();
+    super.initState();
+  }
+
+  Future<void> _showBottomCall(BuildContext context, String number) {
     return showModalBottomSheet(
         context: context,
         builder: (context) {
@@ -40,7 +58,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                         vertical: 16.0, horizontal: 16.0),
                     child: InkWell(
                       onTap: () {
-                        _launchUrl('tel://62858883235522');
+                        _launchUrl('tel://$number');
                       },
                       child: const Text(
                         'Phone',
@@ -56,7 +74,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     child: InkWell(
                       onTap: () {
                         _launchUrlBrowser(
-                            'https://api.whatsapp.com/send/?phone=62858883235522');
+                            'https://api.whatsapp.com/send/?phone$number');
                       },
                       child: const Text(
                         'Whatsapp',
@@ -86,6 +104,89 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       throw Exception('Could not launch $url');
+    }
+  }
+
+  Future<void> _showBottomMaps({
+    required BuildContext context,
+    required Function(maps.AvailableMap map) onMapTap,
+  }) async {
+    final availableMaps = await maps.MapLauncher.installedMaps;
+    if (!mounted) return;
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              for (var map in availableMaps)
+                ListTile(
+                  onTap: () => onMapTap(map),
+                  title: Text(map.mapName),
+                  leading: SvgPicture.asset(
+                    map.icon,
+                    height: 30.0,
+                    width: 30.0,
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> launchURLGmaps(String lat, String long) async {
+    // final String mapsUrl = "https://www.google.com/maps/search/?api=1&query=$lat,$long";
+    //
+    //
+    //
+    // Uri url = Uri.parse(mapsUrl);
+    //
+    // if (!await launchUrl(url)) {
+    //   throw Exception('Could not launch $url');
+    // }
+    // final availableMaps = await maps.MapLauncher.installedMaps;
+    //
+    //
+    // await availableMaps.first.showMarker(
+    //   coords: maps.Coords(latitude, longitude),
+    //   title: "Ocean Beach",
+    // );
+  }
+
+  getCurrentLocation() async {
+    dynamic serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      permission = await Geolocator.requestPermission();
+      return Future.error('Location services are disabled.');
+    } else {
+      permission = await Geolocator.checkPermission();
+
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          return Future.error('Location permissions are denied');
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        return Future.error(
+            'Location permissions are permanently denied, we cannot request permissions.');
+      }
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+      setState(() {
+        _currentPosition = position;
+        isLoading = false;
+      });
     }
   }
 
@@ -220,7 +321,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                               bottom: 0,
                               child: GestureDetector(
                                 onTap: () {
-                                  _showBottomCall(context);
+                                  _showBottomCall(
+                                      context, widget.data.phoneNo1!);
                                 },
                                 child: const Icon(
                                   Icons.phone_outlined,
@@ -286,7 +388,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                               bottom: 0,
                               child: GestureDetector(
                                 onTap: () {
-                                  _showBottomCall(context);
+                                  _showBottomCall(
+                                      context, widget.data.phoneNo2!);
                                 },
                                 child: const Icon(
                                   Icons.phone_outlined,
@@ -348,19 +451,56 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Maps',
-                          style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Maps',
+                              style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                _showBottomMaps(
+                                    context: context,
+                                    onMapTap: (map) {
+                                      map.showDirections(
+                                        destination: maps.Coords(
+                                            widget.data.latitude != ''
+                                                ? double.parse(
+                                                    widget.data.latitude!)
+                                                : _currentPosition.latitude,
+                                            widget.data.longitude != ''
+                                                ? double.parse(
+                                                    widget.data.longitude!)
+                                                : _currentPosition.longitude),
+                                        destinationTitle:
+                                            widget.data.clientName,
+                                        origin: maps.Coords(
+                                            _currentPosition.latitude,
+                                            _currentPosition.longitude),
+                                        originTitle: 'You',
+                                        directionsMode: directionsMode,
+                                      );
+                                    });
+                              },
+                              child: const Text(
+                                'Open Google Maps',
+                                style: TextStyle(
+                                    color: primaryColor,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 8),
                         Container(
                           width: double.infinity,
                           height: 173,
                           decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
                               border: Border.all(
                                   color: Colors.grey.withOpacity(0.1)),
                               color: const Color(0xFFFBFBFB),
@@ -371,12 +511,76 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                                   offset:
                                       const Offset(-6, 4), // Shadow position
                                 ),
-                              ],
-                              image: const DecorationImage(
-                                  image: AssetImage(
-                                      'assets/maps_placeholder.png'))),
-                          padding:
-                              const EdgeInsets.only(left: 16.0, right: 16.0),
+                              ]),
+                          child: isLoading
+                              ? Shimmer.fromColors(
+                                  baseColor: Colors.grey.shade300,
+                                  highlightColor: Colors.grey.shade100,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade300,
+                                    ),
+                                    width: double.infinity,
+                                    height: 173,
+                                  ),
+                                )
+                              : AbsorbPointer(
+                                  absorbing: true,
+                                  child: FlutterMap(
+                                    options: MapOptions(
+                                      center: LatLng(
+                                          widget.data.latitude != ''
+                                              ? double.parse(
+                                                  widget.data.latitude!)
+                                              : _currentPosition.latitude,
+                                          widget.data.longitude != ''
+                                              ? double.parse(
+                                                  widget.data.longitude!)
+                                              : _currentPosition.longitude),
+                                      zoom: 17.0,
+                                      keepAlive: false,
+                                    ),
+                                    layers: [
+                                      // TileLayerOptions(
+                                      //   urlTemplate:
+                                      //       "https://api.tiles.mapbox.com/v4/"
+                                      //       "{id}/{z}/{x}/{y}@2x.png?access_token={accessToken}",
+                                      //   additionalOptions: {
+                                      //     'accessToken':
+                                      //         '31232956-93ac-41b1-aa98-c048527f8ea0',
+                                      //     'id': 'mapbox.streets',
+                                      //   },
+                                      // ),
+
+                                      TileLayerOptions(
+                                          urlTemplate:
+                                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                          subdomains: ['a', 'b', 'c']),
+                                      MarkerLayerOptions(
+                                        markers: [
+                                          Marker(
+                                            width: 30.0,
+                                            height: 30.0,
+                                            point: LatLng(
+                                                widget.data.latitude != ''
+                                                    ? double.parse(
+                                                        widget.data.latitude!)
+                                                    : _currentPosition.latitude,
+                                                widget.data.longitude != ''
+                                                    ? double.parse(
+                                                        widget.data.longitude!)
+                                                    : _currentPosition
+                                                        .longitude),
+                                            builder: (ctx) => Image.asset(
+                                              'assets/icon/pin.png',
+                                              scale: 1,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
                         )
                       ],
                     ),

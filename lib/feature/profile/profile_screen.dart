@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_collection/components/color_comp.dart';
+import 'package:mobile_collection/feature/tab/provider/tab_provider.dart';
 import 'package:mobile_collection/utility/database_helper.dart';
+import 'package:mobile_collection/utility/firebase_notification_service.dart';
+import 'package:mobile_collection/utility/shared_pref_util.dart';
 import 'package:mobile_collection/utility/string_router_util.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -43,6 +48,126 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
+  Future<void> showBottomLogout() {
+    return showModalBottomSheet(
+        context: context,
+        isDismissible: false,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(24),
+          ),
+        ),
+        clipBehavior: Clip.antiAliasWithSaveLayer,
+        builder: (context) {
+          return StatefulBuilder(
+              builder: (BuildContext context, StateSetter setStates) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                Padding(
+                    padding:
+                        const EdgeInsets.only(top: 32.0, left: 24, right: 24),
+                    child: Center(
+                      child: Image.asset(
+                        'assets/img/back.png',
+                        width: 150,
+                      ),
+                    )),
+                Padding(
+                  padding: const EdgeInsets.only(
+                      top: 24.0, left: 24, right: 24, bottom: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: const [
+                      Text(
+                        'Are you sure?',
+                        style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500),
+                      ),
+                      Text(
+                        'Anda akan keluar dari akun ini',
+                        style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w300),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Padding(
+                  padding: const EdgeInsets.only(left: 16.0, right: 16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      InkWell(
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                        child: Container(
+                          width: MediaQuery.of(context).size.width * 0.4,
+                          height: 45,
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Center(
+                              child: Text('TIDAK',
+                                  style: TextStyle(
+                                      fontSize: 15,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600))),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      InkWell(
+                        onTap: () async {
+                          final FirebaseNotificationService
+                              firebaseNotificationService =
+                              FirebaseNotificationService();
+
+                          await firebaseNotificationService.fcmUnSubscribe(id);
+
+                          SharedPrefUtil.deleteSharedPref('token');
+                          await DatabaseHelper.deleteUser();
+                          if (!mounted) return;
+                          var bottomBarProvider =
+                              Provider.of<TabProvider>(context, listen: false);
+                          bottomBarProvider.setPage(0);
+                          bottomBarProvider.setTab(0);
+                          Navigator.pushNamedAndRemoveUntil(
+                              context,
+                              StringRouterUtil.loginScreenRoute,
+                              (route) => false);
+                        },
+                        child: Container(
+                          width: MediaQuery.of(context).size.width * 0.4,
+                          height: 45,
+                          decoration: BoxDecoration(
+                            color: primaryColor,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Center(
+                              child: Text('YA',
+                                  style: TextStyle(
+                                      fontSize: 15,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600))),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+              ],
+            );
+          });
+        });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -75,8 +200,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 16),
             InkWell(
               onTap: () {
-                Navigator.pushNamedAndRemoveUntil(context,
-                    StringRouterUtil.loginScreenRoute, (route) => false);
+                showBottomLogout();
               },
               child: Container(
                 width: double.infinity,

@@ -362,13 +362,13 @@ class DatabaseHelper {
   }
 
   // Read all agreement
-  static Future<List<Data>> getAgreement() async {
+  static Future<List<AgreementList>> getAgreement() async {
     return _lock.synchronized(() async {
       final db = await DatabaseHelper.db();
       List<Map<String, dynamic>> maps = await db.query('agreement');
       await db.close();
       return List.generate(maps.length, (i) {
-        return Data.fromMap(maps[i]);
+        return AgreementList.fromMap(maps[i]);
       });
     });
   }
@@ -552,6 +552,7 @@ class DatabaseHelper {
       final db = await DatabaseHelper.db();
       try {
         await db.delete('user');
+        await db.delete('datelogin');
       } catch (err) {
         debugPrint("Something went wrong when deleting an item: $err");
       }

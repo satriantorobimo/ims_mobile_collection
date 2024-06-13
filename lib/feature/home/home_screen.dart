@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -61,9 +63,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> getStatus() async {
     setState(() {
-      filter.add(const CustDropdownMenuItem(value: 0, child: Text("Daily")));
-      filter
-          .add(const CustDropdownMenuItem(value: 1, child: Text("This Month")));
+      filter.add(const CustDropdownMenuItem(
+          value: 0, data: 'Daily', child: Text("Daily")));
+      filter.add(const CustDropdownMenuItem(
+          value: 1, data: 'This Month', child: Text("This Month")));
     });
   }
 
@@ -81,7 +84,6 @@ class _HomeScreenState extends State<HomeScreen> {
       if (value) {
         setState(() {
           taskListBloc.add(TaskListAttempt(data[0]['uid']));
-          dashboardBloc.add(DashboardAttempt(data[0]['uid']));
         });
       } else {
         setState(() async {
@@ -147,6 +149,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 final data = await DatabaseHelper.getDateLogin();
                 DateTime? selectedDate = DateTime.now();
                 var dateNows = DateFormat('dd-MM-yyyy').format(selectedDate);
+                log(data[0]['date']);
                 if (dateNows.compareTo(data[0]['date']) != 0) {
                   await DatabaseHelper.deleteData();
                   await DatabaseHelper.updateDateLogin(
@@ -156,6 +159,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     state.taskListResponseModel.data!);
                 for (var val in state.taskListResponseModel.data!) {
                   await DatabaseHelper.insertAgreement(val.agreementList!);
+                  if (val.agreementList!.first.attachmentList!.isNotEmpty) {
+                    for (var vals in val.agreementList!) {
+                      if (vals.attachmentList != null) {
+                        await DatabaseHelper.insertAttachmentList(
+                            vals.attachmentList!, vals.taskId!);
+                      }
+                    }
+                  }
                 }
                 final dataSync = await DatabaseHelper.getAgreementSync();
                 final dataDone = await DatabaseHelper.getAgreementDone();
@@ -167,6 +178,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   taskDone = dataDone.length;
                   isLoading = false;
                 });
+                dashboardBloc.add(DashboardAttempt(data[0]['uid']));
               }
               if (state is TaskListError) {
                 if (!mounted) return;
@@ -516,7 +528,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               Container(
-                width: MediaQuery.of(context).size.width * 0.25,
+                width: MediaQuery.of(context).size.width * 0.28,
                 height: 45,
                 padding: const EdgeInsets.all(8.0),
                 child: CustDropDown(

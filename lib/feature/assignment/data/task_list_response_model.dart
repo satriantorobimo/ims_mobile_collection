@@ -344,6 +344,7 @@ class AgreementList {
   String? platNo;
   String? vehicleDescription;
   String? vehicleCondition;
+  List<AttachmentList>? attachmentList;
   int? sync;
 
   AgreementList(
@@ -364,6 +365,7 @@ class AgreementList {
       this.platNo,
       this.vehicleDescription,
       this.vehicleCondition,
+      this.attachmentList,
       this.sync});
 
   AgreementList.fromJson(Map<String, dynamic> json) {
@@ -384,6 +386,12 @@ class AgreementList {
     platNo = json['plat_no'];
     vehicleDescription = json['vehicle_description'];
     vehicleCondition = json['vehicle_condition'];
+    if (json['attachment_list'] != null) {
+      attachmentList = <AttachmentList>[];
+      json['attachment_list'].forEach((v) {
+        attachmentList!.add(AttachmentList.fromJson(v));
+      });
+    }
     sync = 0;
   }
 
@@ -406,6 +414,9 @@ class AgreementList {
     data['plat_no'] = platNo;
     data['vehicle_description'] = vehicleDescription;
     data['vehicle_condition'] = vehicleCondition;
+    if (attachmentList != null) {
+      data['attachment_list'] = attachmentList!.map((v) => v.toJson()).toList();
+    }
     return data;
   }
 
@@ -453,5 +464,61 @@ class AgreementList {
       vehicleCondition: map['vehicle_condition'],
       sync: map['sync'],
     );
+  }
+}
+
+class AttachmentList {
+  int? taskId;
+  int? attachmentId;
+  String? fileName;
+  String? filePath;
+  int? fileSize;
+  String? modDate;
+
+  AttachmentList(
+      {this.taskId,
+      this.attachmentId,
+      this.fileName,
+      this.filePath,
+      this.fileSize,
+      this.modDate});
+
+  AttachmentList.fromJson(Map<String, dynamic> json) {
+    attachmentId = json['attachment_id'];
+    fileName = json['file_name'];
+    filePath = json['file_path'];
+    fileSize = json['file_size'];
+    modDate = json['mod_date'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['attachment_id'] = attachmentId;
+    data['file_name'] = fileName;
+    data['file_path'] = filePath;
+    data['file_size'] = fileSize;
+    data['mod_date'] = modDate;
+    return data;
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'task_id': taskId,
+      'attachment_id': attachmentId,
+      'file_name': fileName,
+      'file_path': filePath,
+      'file_size': fileSize,
+      'mod_date': modDate
+    };
+  }
+
+  factory AttachmentList.fromMap(Map<String, dynamic> map) {
+    return AttachmentList(
+        taskId: map['task_id'],
+        attachmentId: map['attachment_id'],
+        fileName: map['file_name'],
+        filePath: map['file_path'],
+        fileSize: map['file_size'],
+        modDate: map['mod_date']);
   }
 }

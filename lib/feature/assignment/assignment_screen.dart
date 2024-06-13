@@ -34,11 +34,12 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
 
   Future<void> getStatus() async {
     setState(() {
-      filter.add(const CustDropdownMenuItem(value: 0, child: Text("ALL")));
-      filter
-          .add(const CustDropdownMenuItem(value: 1, child: Text("COMPLETED")));
-      filter
-          .add(const CustDropdownMenuItem(value: 2, child: Text("UNFINISHED")));
+      filter.add(const CustDropdownMenuItem(
+          value: 0, data: 'ALL', child: Text("ALL")));
+      filter.add(const CustDropdownMenuItem(
+          value: 1, data: 'COMPLETED', child: Text("COMPLETED")));
+      filter.add(const CustDropdownMenuItem(
+          value: 2, data: 'UNFINISHED', child: Text("UNFINISHED")));
     });
   }
 

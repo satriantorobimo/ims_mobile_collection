@@ -62,11 +62,34 @@ class UrlUtil {
     return baseUrl + getUrlDashboard2;
   }
 
+  static String urlNotification() =>
+      'api/mobcoll_api/api/TaskNotification/Getrow';
+
+  String getUrlurlNotification() {
+    final String getUrlurlNotification2 = urlNotification();
+    return baseUrl + getUrlurlNotification2;
+  }
+
   static String urlUpdate() => 'api/mobcoll_api/api/Agreement/UpdateResult';
 
   String getUrlUpdate() {
     final String getUrlUpdate2 = urlUpdate();
     return baseUrl + getUrlUpdate2;
+  }
+
+  static String urlUpload() =>
+      'api/mobcoll_api/api/TaskAttachment/UploadAttachment';
+
+  String getUrlUpload() {
+    final String getUrlUpload2 = urlUpload();
+    return baseUrl + getUrlUpload2;
+  }
+
+  static String urlPreview() => 'api/mobcoll_api/api/TaskAttachment/Preview';
+
+  String getUrlPreview() {
+    final String getUrlPreview2 = urlPreview();
+    return baseUrl + getUrlPreview2;
   }
 
   static String urlAmortization() =>

@@ -27,13 +27,16 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
   var filterSelect = 0;
   Future<void> getStatus() async {
     setState(() {
-      filter.add(const CustDropdownMenuItem(value: 0, child: Text("PAID")));
-      filter.add(
-          const CustDropdownMenuItem(value: 1, child: Text("ALREADY PAID")));
-      filter.add(const CustDropdownMenuItem(value: 2, child: Text("PROMISE")));
-      filter.add(const CustDropdownMenuItem(value: 3, child: Text("NOT PAID")));
-      filter
-          .add(const CustDropdownMenuItem(value: 4, child: Text("NOT FOUND")));
+      filter.add(const CustDropdownMenuItem(
+          value: 0, data: 'PAID', child: Text("PAID")));
+      filter.add(const CustDropdownMenuItem(
+          value: 1, data: 'ALREADY PAID', child: Text("ALREADY PAID")));
+      filter.add(const CustDropdownMenuItem(
+          value: 2, data: 'PROMISE', child: Text("PROMISE")));
+      filter.add(const CustDropdownMenuItem(
+          value: 3, data: 'NOT PAID', child: Text("NOT PAID")));
+      filter.add(const CustDropdownMenuItem(
+          value: 4, data: 'NOT FOUND', child: Text("NOT FOUND")));
     });
   }
 

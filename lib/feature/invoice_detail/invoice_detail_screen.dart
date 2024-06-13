@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
@@ -10,8 +11,10 @@ import 'package:intl/intl.dart';
 import 'package:mobile_collection/components/color_comp.dart';
 import 'package:mobile_collection/feature/assignment/data/task_list_response_model.dart';
 import 'package:mobile_collection/feature/invoice_detail/bloc/update_bloc/bloc.dart';
+import 'package:mobile_collection/feature/invoice_detail/bloc/upload_bloc/bloc.dart';
 import 'package:mobile_collection/feature/invoice_detail/data/attachment_model.dart';
 import 'package:mobile_collection/feature/invoice_detail/data/update_request_model.dart';
+import 'package:mobile_collection/feature/invoice_detail/data/upload_request_model.dart';
 import 'package:mobile_collection/feature/invoice_detail/domain/repo/update_repo.dart';
 import 'package:mobile_collection/utility/database_helper.dart';
 import 'package:mobile_collection/utility/drop_down_util.dart';
@@ -22,6 +25,7 @@ import 'package:path/path.dart' as path;
 
 class InvoiceDetailScreen extends StatefulWidget {
   const InvoiceDetailScreen({super.key, required this.agreementList});
+
   final AgreementList agreementList;
 
   @override
@@ -50,24 +54,49 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
   String collCode = '';
   var filterSelect = 0;
   List<Attachment> attachment = [];
-  Future<void> getStatus() async {
-    setState(() {
-      filter.add(const CustDropdownMenuItem(value: 0, child: Text("PAID")));
-      filter.add(
-          const CustDropdownMenuItem(value: 1, child: Text("ALREADY PAID")));
-      filter.add(const CustDropdownMenuItem(value: 2, child: Text("PROMISE")));
-      filter.add(const CustDropdownMenuItem(value: 3, child: Text("NOT PAID")));
-      filter
-          .add(const CustDropdownMenuItem(value: 4, child: Text("NOT FOUND")));
-    });
-  }
-
+  List<UploadRequestModel> uploadRequestModel = [];
+  bool isLoading = false;
   UpdateRequestModel updateRequestModel = UpdateRequestModel();
-
+  UploadBloc uploadBloc = UploadBloc(updateRepo: UpdateRepo());
   UpdateBloc updateBloc = UpdateBloc(updateRepo: UpdateRepo());
-
+  bool isReadAmt = false;
+  bool isReadRemark = false;
+  bool isReadStatus = false;
+  bool isReadDate = false;
   final InternetConnectionChecker internetConnectionChecker =
       InternetConnectionChecker();
+
+  Future<void> getStatus() async {
+    setState(() {
+      filter.add(const CustDropdownMenuItem(
+          value: 0, data: 'PAID', child: Text("PAID")));
+      filter.add(const CustDropdownMenuItem(
+          value: 1, data: 'ALREADY PAID', child: Text("ALREADY PAID")));
+      filter.add(const CustDropdownMenuItem(
+          value: 2, data: 'PROMISE', child: Text("PROMISE")));
+      filter.add(const CustDropdownMenuItem(
+          value: 3, data: 'NOT PAID', child: Text("NOT PAID")));
+      filter.add(const CustDropdownMenuItem(
+          value: 4, data: 'NOT FOUND', child: Text("NOT FOUND")));
+      if (widget.agreementList.resultCode != '') {
+        int index = filter.indexWhere((item) =>
+            item.data == widget.agreementList.resultCode!.toUpperCase());
+        filterSelect = index;
+        ctrlAmount.text = widget.agreementList.resultPaymentAmount.toString();
+        ctrlRemark.text = widget.agreementList.resultRemarks!;
+        if (widget.agreementList.resultPromiseDate != '') {
+          DateTime tempDate = DateFormat('dd/MM/yyyy')
+              .parse(widget.agreementList.resultPromiseDate!);
+          dateSend = DateFormat('yyyy-MM-dd').format(tempDate);
+          dateAttach = DateFormat('dd MMM, yyyy').format(tempDate);
+        }
+        isReadAmt = true;
+        isReadRemark = true;
+        isReadStatus = true;
+        isReadDate = true;
+      }
+    });
+  }
 
   Future<void> updateData(UpdateRequestModel data, bool isOffline) async {
     await DatabaseHelper.updateAgreement(
@@ -483,6 +512,8 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
       var imagePath = await pickedImage.readAsBytes();
       var fileSize = imagePath.length; // Get the file size in bytes
       if (fileSize <= maxFileSizeInBytes) {
+        Uint8List imagebytes = await pickedImage.readAsBytes();
+        String base64string = base64.encode(imagebytes);
         setState(() {
           attachment.add(Attachment(
               taskId: widget.agreementList.taskId!,
@@ -491,6 +522,13 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
               basename: path.basename(pickedImage.path),
               date: dateAttach,
               size: (fileSize / 1000).toString()));
+          uploadRequestModel.add(UploadRequestModel(
+              pTaskId: widget.agreementList.taskId!,
+              pAgreementNo: widget.agreementList.agreementNo,
+              pFilePath: widget.agreementList.taskId!,
+              pFileName: path.basename(pickedImage.path),
+              pFileSize: fileSize ~/ 1000,
+              pBase64: base64string));
         });
       } else {
         return 'big';
@@ -827,6 +865,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                           hintText: "Select Status",
                           borderRadius: 5,
                           defaultSelectedIndex: 0,
+                          enabled: isReadStatus ? false : true,
                           onChanged: (val) {
                             setState(() {
                               filterSelect = val;
@@ -863,6 +902,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                             child: TextFormField(
                               controller: ctrlAmount,
                               keyboardType: TextInputType.number,
+                              readOnly: isReadAmt,
                               inputFormatters: [
                                 FilteringTextInputFormatter.digitsOnly,
                               ],
@@ -929,7 +969,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                             height: 45,
                             child: TextFormField(
                               controller: ctrlDate,
-                              onTap: _presentDatePicker,
+                              onTap: isReadDate ? null : _presentDatePicker,
                               keyboardType: TextInputType.text,
                               readOnly: true,
                               decoration: InputDecoration(
@@ -987,6 +1027,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                           child: TextFormField(
                             keyboardType: TextInputType.text,
                             maxLines: 6,
+                            readOnly: isReadRemark,
                             controller: ctrlRemark,
                             decoration: InputDecoration(
                                 hintText: 'Remark',
@@ -1033,9 +1074,11 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                             ],
                           ),
                           GestureDetector(
-                            onTap: () {
-                              _showBottomAttachment(context);
-                            },
+                            onTap: isReadAmt
+                                ? null
+                                : () {
+                                    _showBottomAttachment(context);
+                                  },
                             child: Padding(
                               padding: const EdgeInsets.only(right: 8.0),
                               child: Image.asset(
@@ -1048,280 +1091,338 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                         ],
                       ),
                       const SizedBox(height: 8),
-                      attachment.isEmpty
-                          ? Container(
-                              width: MediaQuery.of(context).size.width,
-                              height: 123,
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                  color: const Color(0xFFFBFBFB),
-                                  border: Border.all(
-                                      color: const Color(0xFFEAEAEA)),
-                                  borderRadius: const BorderRadius.all(
-                                      Radius.circular(10))),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: const [
-                                  Center(
-                                      child: Icon(
-                                    Icons.camera_alt_outlined,
-                                    size: 35,
-                                  )),
-                                  Text(
-                                    'No Attachment',
-                                    style: TextStyle(
-                                        color: Colors.black,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : Container(
-                              width: MediaQuery.of(context).size.width,
-                              height: 75,
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                  color: const Color(0xFFF8FAFE),
-                                  border: Border.all(
-                                      color: const Color(0xFFF8FAFE)),
-                                  borderRadius: const BorderRadius.all(
-                                      Radius.circular(10))),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
+                      widget.agreementList.attachmentList != null
+                          ? ListView.separated(
+                              shrinkWrap: true,
+                              itemCount:
+                                  widget.agreementList.attachmentList!.length,
+                              physics: const NeverScrollableScrollPhysics(),
+                              separatorBuilder:
+                                  (BuildContext context, int index) {
+                                return const SizedBox(height: 16);
+                              },
+                              itemBuilder: (BuildContext context, int index) {
+                                return Container(
+                                  width: MediaQuery.of(context).size.width,
+                                  height: 75,
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                      color: const Color(0xFFF8FAFE),
+                                      border: Border.all(
+                                          color: const Color(0xFFF8FAFE)),
+                                      borderRadius: const BorderRadius.all(
+                                          Radius.circular(10))),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
-                                      SvgPicture.asset(
-                                        'assets/icon/file.svg',
-                                        height: 28,
-                                        width: 28,
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
+                                      Row(
                                         children: [
-                                          Text(
-                                            'File 0${attachment[0].ext}',
-                                            style: const TextStyle(
-                                                color: Colors.black,
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w500),
+                                          SvgPicture.asset(
+                                            'assets/icon/file.svg',
+                                            height: 28,
+                                            width: 28,
                                           ),
-                                          Text(
-                                            '${attachment[0].size} KB . ${attachment[0].date}  ',
-                                            style: const TextStyle(
-                                                color: Color(0xFF71839B),
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w400),
+                                          const SizedBox(width: 16),
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                'File ${widget.agreementList.attachmentList![index].fileName!.substring(0, 25)}',
+                                                style: const TextStyle(
+                                                    color: Colors.black,
+                                                    fontSize: 14,
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                              ),
+                                              Text(
+                                                '${widget.agreementList.attachmentList![index].fileSize} KB . ${widget.agreementList.attachmentList![index].modDate}  ',
+                                                style: const TextStyle(
+                                                    color: Color(0xFF71839B),
+                                                    fontSize: 12,
+                                                    fontWeight:
+                                                        FontWeight.w400),
+                                              ),
+                                            ],
+                                          )
+                                        ],
+                                      ),
+                                      Row(
+                                        children: [
+                                          SvgPicture.asset(
+                                            'assets/icon/download.svg',
+                                            height: 20,
+                                            width: 20,
+                                          ),
+                                          const SizedBox(width: 16),
+                                          SvgPicture.asset(
+                                            'assets/icon/trash.svg',
+                                            height: 20,
+                                            width: 20,
                                           ),
                                         ],
                                       )
                                     ],
                                   ),
-                                  Row(
-                                    children: [
-                                      SvgPicture.asset(
-                                        'assets/icon/download.svg',
-                                        height: 20,
-                                        width: 20,
-                                      ),
-                                      const SizedBox(width: 16),
-                                      SvgPicture.asset(
-                                        'assets/icon/trash.svg',
-                                        height: 20,
-                                        width: 20,
+                                );
+                              })
+                          : attachment.isEmpty
+                              ? Container(
+                                  width: MediaQuery.of(context).size.width,
+                                  height: 123,
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                      color: const Color(0xFFFBFBFB),
+                                      border: Border.all(
+                                          color: const Color(0xFFEAEAEA)),
+                                      borderRadius: const BorderRadius.all(
+                                          Radius.circular(10))),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: const [
+                                      Center(
+                                          child: Icon(
+                                        Icons.camera_alt_outlined,
+                                        size: 35,
+                                      )),
+                                      Text(
+                                        'No Attachment',
+                                        style: TextStyle(
+                                            color: Colors.black,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500),
                                       ),
                                     ],
-                                  )
-                                ],
-                              ),
-                            )
+                                  ),
+                                )
+                              : ListView.separated(
+                                  shrinkWrap: true,
+                                  itemCount: attachment.length,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  separatorBuilder:
+                                      (BuildContext context, int index) {
+                                    return const SizedBox(height: 16);
+                                  },
+                                  itemBuilder:
+                                      (BuildContext context, int index) {
+                                    return Container(
+                                      width: MediaQuery.of(context).size.width,
+                                      height: 75,
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                          color: const Color(0xFFF8FAFE),
+                                          border: Border.all(
+                                              color: const Color(0xFFF8FAFE)),
+                                          borderRadius: const BorderRadius.all(
+                                              Radius.circular(10))),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              SvgPicture.asset(
+                                                'assets/icon/file.svg',
+                                                height: 28,
+                                                width: 28,
+                                              ),
+                                              const SizedBox(width: 16),
+                                              Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      Text(
+                                                        'File ${attachment[index].basename.substring(0, 22)}',
+                                                        style: const TextStyle(
+                                                            color: Colors.black,
+                                                            fontSize: 14,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w500),
+                                                      ),
+                                                      Text(
+                                                        attachment[index].ext,
+                                                        style: const TextStyle(
+                                                            color: Colors.black,
+                                                            fontSize: 14,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w500),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  Text(
+                                                    '${attachment[index].size} KB . ${attachment[index].date}  ',
+                                                    style: const TextStyle(
+                                                        color:
+                                                            Color(0xFF71839B),
+                                                        fontSize: 12,
+                                                        fontWeight:
+                                                            FontWeight.w400),
+                                                  ),
+                                                ],
+                                              )
+                                            ],
+                                          ),
+                                          Row(
+                                            children: [
+                                              SvgPicture.asset(
+                                                'assets/icon/download.svg',
+                                                height: 20,
+                                                width: 20,
+                                              ),
+                                              const SizedBox(width: 16),
+                                              SvgPicture.asset(
+                                                'assets/icon/trash.svg',
+                                                height: 20,
+                                                width: 20,
+                                              ),
+                                            ],
+                                          )
+                                        ],
+                                      ),
+                                    );
+                                  })
                     ],
                   ),
                   const SizedBox(height: 24),
-                  BlocListener(
-                      bloc: updateBloc,
-                      listener: (_, UpdateState state) async {
-                        if (state is UpdateLoading) {}
-                        if (state is UpdateLoaded) {
-                          Navigator.pop(context);
-                          updateData(updateRequestModel, true).then((value) {
-                            Navigator.pop(context);
-                            goHome();
-                          });
-                        }
-                        if (state is UpdateError) {
-                          Navigator.pop(context);
-                          if (!mounted) return;
-                          GeneralUtil()
-                              .showSnackBarError(context, state.error!);
-                        }
-                        if (state is UpdateException) {
-                          Navigator.pop(context);
-                          if (!mounted) return;
-                          GeneralUtil().showSnackBarError(context, state.error);
-                        }
-                      },
-                      child: BlocBuilder(
+                  MultiBlocListener(
+                      listeners: [
+                        BlocListener(
                           bloc: updateBloc,
-                          builder: (_, UpdateState state) {
+                          listener: (_, UpdateState state) async {
                             if (state is UpdateLoading) {
-                              return InkWell(
-                                onTap: null,
-                                child: Container(
-                                  width: double.infinity,
-                                  height: 50,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Center(
-                                      child: Text('SAVE',
-                                          style: TextStyle(
-                                              fontSize: 15,
-                                              color: Colors.black,
-                                              fontWeight: FontWeight.w600))),
-                                ),
-                              );
+                              setState(() {
+                                isLoading = true;
+                              });
                             }
                             if (state is UpdateLoaded) {
-                              return InkWell(
-                                onTap: null,
-                                child: Container(
-                                  width: double.infinity,
-                                  height: 50,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Center(
-                                      child: Text('SAVE',
-                                          style: TextStyle(
-                                              fontSize: 15,
-                                              color: Colors.black,
-                                              fontWeight: FontWeight.w600))),
-                                ),
-                              );
+                              uploadBloc.add(
+                                  UploadAttempt(uploadRequestModel, collCode));
                             }
                             if (state is UpdateError) {
-                              return InkWell(
-                                onTap: () {
-                                  updateRequestModel.pResultPaymentAmount =
-                                      int.parse(paidAmountValue == ''
-                                          ? '0'
-                                          : paidAmountValue);
-                                  updateRequestModel.pResultPromiseDate =
-                                      dateSend;
-                                  updateRequestModel.pTaskId =
-                                      widget.agreementList.taskId;
-                                  updateRequestModel.pResultRemarks =
-                                      ctrlRemark.text;
-                                  updateRequestModel.pResultCode =
-                                      filterValue[filterSelect];
-                                },
-                                child: Container(
-                                  width: double.infinity,
-                                  height: 50,
-                                  decoration: BoxDecoration(
-                                    color: thirdColor,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Center(
-                                      child: Text('SAVE',
-                                          style: TextStyle(
-                                              fontSize: 15,
-                                              color: Colors.black,
-                                              fontWeight: FontWeight.w600))),
-                                ),
-                              );
+                              Navigator.pop(context);
+                              if (!mounted) return;
+                              setState(() {
+                                isLoading = false;
+                              });
+                              GeneralUtil()
+                                  .showSnackBarError(context, state.error!);
                             }
                             if (state is UpdateException) {
-                              return InkWell(
-                                onTap: () {
-                                  updateRequestModel.pResultPaymentAmount =
-                                      int.parse(paidAmountValue == ''
-                                          ? '0'
-                                          : paidAmountValue);
-                                  updateRequestModel.pResultPromiseDate =
-                                      dateSend;
-                                  updateRequestModel.pTaskId =
-                                      widget.agreementList.taskId;
-                                  updateRequestModel.pResultRemarks =
-                                      ctrlRemark.text;
-                                  updateRequestModel.pResultCode =
-                                      filterValue[filterSelect];
-                                },
-                                child: Container(
-                                  width: double.infinity,
-                                  height: 50,
-                                  decoration: BoxDecoration(
-                                    color: thirdColor,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Center(
-                                      child: Text('SAVE',
-                                          style: TextStyle(
-                                              fontSize: 15,
-                                              color: Colors.black,
-                                              fontWeight: FontWeight.w600))),
-                                ),
-                              );
+                              Navigator.pop(context);
+                              if (!mounted) return;
+                              setState(() {
+                                isLoading = false;
+                              });
+                              GeneralUtil()
+                                  .showSnackBarError(context, state.error);
                             }
-                            return InkWell(
-                              onTap: () {
-                                updateRequestModel.pResultPaymentAmount =
-                                    int.parse(paidAmountValue == ''
-                                        ? '0'
-                                        : paidAmountValue);
-                                updateRequestModel.pResultPromiseDate =
-                                    dateSend;
-                                updateRequestModel.pTaskId =
-                                    widget.agreementList.taskId;
-                                updateRequestModel.pResultRemarks =
-                                    ctrlRemark.text;
-                                updateRequestModel.pResultCode =
-                                    filterValue[filterSelect];
-                                loading(context);
-                                NetworkInfo(internetConnectionChecker)
-                                    .isConnected
-                                    .then((value) {
-                                  if (value) {
-                                    setState(() {
-                                      updateBloc.add(UpdateAttempt(
-                                          updateRequestModel, collCode));
+                          },
+                        ),
+                        BlocListener(
+                          bloc: uploadBloc,
+                          listener: (_, UploadState state) async {
+                            if (state is UploadLoading) {}
+                            if (state is UploadLoaded) {
+                              Navigator.pop(context);
+                              setState(() {
+                                isLoading = false;
+                              });
+                              // updateData(updateRequestModel, true)
+                              //     .then((value) {
+
+                              //   goHome();
+                              // });
+                            }
+                            if (state is UploadError) {
+                              Navigator.pop(context);
+                              if (!mounted) return;
+                              setState(() {
+                                isLoading = false;
+                              });
+                              GeneralUtil()
+                                  .showSnackBarError(context, state.error!);
+                            }
+                            if (state is UploadException) {
+                              Navigator.pop(context);
+                              if (!mounted) return;
+                              setState(() {
+                                isLoading = false;
+                              });
+                              GeneralUtil()
+                                  .showSnackBarError(context, state.error);
+                            }
+                          },
+                        )
+                      ],
+                      child: InkWell(
+                        onTap:
+                            isLoading || widget.agreementList.resultCode != ''
+                                ? null
+                                : () {
+                                    updateRequestModel.pResultPaymentAmount =
+                                        int.parse(paidAmountValue == ''
+                                            ? '0'
+                                            : paidAmountValue);
+                                    updateRequestModel.pResultPromiseDate =
+                                        dateSend;
+                                    updateRequestModel.pTaskId =
+                                        widget.agreementList.taskId;
+                                    updateRequestModel.pResultRemarks =
+                                        ctrlRemark.text;
+                                    updateRequestModel.pResultCode =
+                                        filterValue[filterSelect];
+                                    loading(context);
+
+                                    NetworkInfo(internetConnectionChecker)
+                                        .isConnected
+                                        .then((value) {
+                                      if (value) {
+                                        setState(() {
+                                          updateBloc.add(UpdateAttempt(
+                                              updateRequestModel, collCode));
+                                        });
+                                      } else {
+                                        setState(() async {
+                                          updateData(updateRequestModel, false)
+                                              .then((value) {
+                                            Navigator.pop(context);
+                                            goHomeDraft();
+                                          });
+                                        });
+                                      }
                                     });
-                                  } else {
-                                    setState(() async {
-                                      updateData(updateRequestModel, false)
-                                          .then((value) {
-                                        Navigator.pop(context);
-                                        goHomeDraft();
-                                      });
-                                    });
-                                  }
-                                });
-                              },
-                              child: Container(
-                                width: double.infinity,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  color: thirdColor,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Center(
-                                    child: Text('SAVE',
-                                        style: TextStyle(
-                                            fontSize: 15,
-                                            color: Colors.black,
-                                            fontWeight: FontWeight.w600))),
-                              ),
-                            );
-                          })),
+                                  },
+                        child: Container(
+                          width: double.infinity,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: isLoading ||
+                                    widget.agreementList.resultCode != ''
+                                ? Colors.grey.withOpacity(0.5)
+                                : thirdColor,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Center(
+                              child: Text('SAVE',
+                                  style: TextStyle(
+                                      fontSize: 15,
+                                      color: isLoading ||
+                                              widget.agreementList.resultCode !=
+                                                  ''
+                                          ? Colors.grey
+                                          : Colors.black,
+                                      fontWeight: FontWeight.w600))),
+                        ),
+                      )),
                 ],
               ),
             ),

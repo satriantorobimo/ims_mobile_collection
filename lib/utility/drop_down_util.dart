@@ -262,9 +262,11 @@ class _CustDropDownState extends State<CustDropDown>
 
 class CustDropdownMenuItem<T> extends StatelessWidget {
   final T value;
+  final T data;
   final Widget child;
 
-  const CustDropdownMenuItem({required this.value, required this.child});
+  const CustDropdownMenuItem(
+      {required this.value, required this.child, required this.data});
 
   @override
   Widget build(BuildContext context) {

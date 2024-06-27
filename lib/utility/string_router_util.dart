@@ -10,4 +10,6 @@ class StringRouterUtil {
   static const String invoiceDetailScreenRoute = '/invoice-detail-route';
   static const String invoiceHistoryScreenRoute = '/invoice-history-route';
   static const String amortizationScreenRoute = '/amortization-route';
+  static const String imageAssetScreenRoute = '/image-asset-route';
+  static const String imageNetworkScreenRoute = '/image-network-route';
 }

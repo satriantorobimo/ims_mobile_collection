@@ -472,6 +472,7 @@ class AttachmentList {
   int? attachmentId;
   String? fileName;
   String? filePath;
+  String? ext;
   int? fileSize;
   String? modDate;
 
@@ -480,6 +481,7 @@ class AttachmentList {
       this.attachmentId,
       this.fileName,
       this.filePath,
+      this.ext,
       this.fileSize,
       this.modDate});
 
@@ -508,6 +510,7 @@ class AttachmentList {
       'file_name': fileName,
       'file_path': filePath,
       'file_size': fileSize,
+      'ext': ext,
       'mod_date': modDate
     };
   }
@@ -519,6 +522,7 @@ class AttachmentList {
         fileName: map['file_name'],
         filePath: map['file_path'],
         fileSize: map['file_size'],
+        ext: map['ext'],
         modDate: map['mod_date']);
   }
 }

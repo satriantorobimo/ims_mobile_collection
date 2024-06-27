@@ -12,7 +12,7 @@ import 'package:mobile_collection/components/color_comp.dart';
 import 'package:mobile_collection/feature/assignment/data/task_list_response_model.dart';
 import 'package:mobile_collection/feature/invoice_detail/bloc/update_bloc/bloc.dart';
 import 'package:mobile_collection/feature/invoice_detail/bloc/upload_bloc/bloc.dart';
-import 'package:mobile_collection/feature/invoice_detail/data/attachment_model.dart';
+import 'package:mobile_collection/feature/invoice_detail/data/attachment_preview_request_model.dart';
 import 'package:mobile_collection/feature/invoice_detail/data/update_request_model.dart';
 import 'package:mobile_collection/feature/invoice_detail/data/upload_request_model.dart';
 import 'package:mobile_collection/feature/invoice_detail/domain/repo/update_repo.dart';
@@ -51,9 +51,10 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
   DateTime? _selectedDate = DateTime.now();
   String dateSend = '';
   String dateAttach = '';
+  String dueDate = '';
   String collCode = '';
   var filterSelect = 0;
-  List<Attachment> attachment = [];
+  List<AttachmentList> attachment = [];
   List<UploadRequestModel> uploadRequestModel = [];
   bool isLoading = false;
   UpdateRequestModel updateRequestModel = UpdateRequestModel();
@@ -107,7 +108,8 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
         resultRemark: data.pResultRemarks,
         isSync: !isOffline ? 0 : 1);
 
-    await DatabaseHelper.insertAttachment(attachment);
+    await DatabaseHelper.insertAttachmentList(
+        attachment, widget.agreementList.taskId!);
   }
 
   @override
@@ -124,6 +126,14 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
     setState(() {
       dateSend = DateFormat('yyyy-MM-dd').format(_selectedDate!);
       dateAttach = DateFormat('dd MMM, yyyy').format(_selectedDate!);
+      if (widget.agreementList.attachmentList != null) {
+        attachment.addAll(widget.agreementList.attachmentList!);
+      }
+      DateTime tempDate = DateFormat('dd-MM-yyyy')
+          .parse(widget.agreementList.installmentDueDate!);
+      var inputDate = DateTime.parse(tempDate.toString());
+      var outputFormat = DateFormat('dd MMMM yyyy');
+      dueDate = outputFormat.format(inputDate);
     });
     getStatus();
     getData();
@@ -370,7 +380,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                             arguments: widget.agreementList);
                       },
                       child: const Text(
-                        'Invoice Update',
+                        'Invoice History',
                         style: TextStyle(
                             color: Colors.black,
                             fontSize: 18,
@@ -436,7 +446,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                 const Padding(
                   padding: EdgeInsets.only(top: 24.0, left: 16, right: 16),
                   child: Text(
-                    'Select Recource File',
+                    'Select Resource File',
                     style: TextStyle(
                         color: Colors.black,
                         fontSize: 18,
@@ -515,13 +525,13 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
         Uint8List imagebytes = await pickedImage.readAsBytes();
         String base64string = base64.encode(imagebytes);
         setState(() {
-          attachment.add(Attachment(
+          attachment.add(AttachmentList(
               taskId: widget.agreementList.taskId!,
-              path: pickedImage.path,
+              filePath: pickedImage.path,
               ext: path.extension(path.basename(pickedImage.path)),
-              basename: path.basename(pickedImage.path),
-              date: dateAttach,
-              size: (fileSize / 1000).toString()));
+              fileName: path.basename(pickedImage.path),
+              modDate: dateAttach,
+              fileSize: fileSize ~/ 1000));
           uploadRequestModel.add(UploadRequestModel(
               pTaskId: widget.agreementList.taskId!,
               pAgreementNo: widget.agreementList.agreementNo,
@@ -704,9 +714,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                             alignment: Alignment.centerLeft,
                             child: Text(
                               GeneralUtil.convertToIdr(
-                                  widget
-                                      .agreementList.overdueInstallmentAmount!,
-                                  2),
+                                  widget.agreementList.installmentAmount!, 2),
                               style: const TextStyle(
                                   color: Color(0xFF565656),
                                   fontSize: 14,
@@ -752,7 +760,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                           child: Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
-                              widget.agreementList.installmentDueDate!,
+                              dueDate,
                               style: const TextStyle(
                                   color: Color(0xFF565656),
                                   fontSize: 14,
@@ -856,22 +864,36 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                                 offset: const Offset(-6, 4), // Shadow position
                               ),
                             ],
-                            color: Colors.white,
+                            color: isReadAmt
+                                ? Colors.grey.withOpacity(0.1)
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: const Color(0xFFE1E1E1))),
-                        child: CustDropDown(
-                          maxListHeight: 300,
-                          items: filter,
-                          hintText: "Select Status",
-                          borderRadius: 5,
-                          defaultSelectedIndex: 0,
-                          enabled: isReadStatus ? false : true,
-                          onChanged: (val) {
-                            setState(() {
-                              filterSelect = val;
-                            });
-                          },
-                        ),
+                        child: isReadAmt
+                            ? Padding(
+                                padding:
+                                    const EdgeInsets.only(left: 8.0, top: 5),
+                                child: Text(
+                                  '${filter[filterSelect].data}',
+                                  style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w400),
+                                ),
+                              )
+                            : CustDropDown(
+                                maxListHeight: 300,
+                                items: filter,
+                                hintText: "Select Status",
+                                borderRadius: 5,
+                                defaultSelectedIndex: 0,
+                                enabled: isReadStatus ? false : true,
+                                onChanged: (val) {
+                                  setState(() {
+                                    filterSelect = val;
+                                  });
+                                },
+                              ),
                       ),
                     ],
                   ),
@@ -916,6 +938,9 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                                       offset: string.length),
                                 );
                               },
+                              style: TextStyle(
+                                  color:
+                                      isReadAmt ? Colors.grey : Colors.black),
                               decoration: InputDecoration(
                                   prefix: Padding(
                                     padding: const EdgeInsets.only(
@@ -930,7 +955,9 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                                       fontSize: 14,
                                       color: Colors.grey.withOpacity(0.5)),
                                   filled: true,
-                                  fillColor: Colors.white,
+                                  fillColor: isReadAmt
+                                      ? Colors.grey.withOpacity(0.1)
+                                      : Colors.white,
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(10),
                                     borderSide: BorderSide.none,
@@ -972,14 +999,19 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                               onTap: isReadDate ? null : _presentDatePicker,
                               keyboardType: TextInputType.text,
                               readOnly: true,
+                              style: TextStyle(
+                                  color:
+                                      isReadAmt ? Colors.grey : Colors.black),
                               decoration: InputDecoration(
-                                  hintText: 'Date of Birth',
+                                  hintText: 'Promise Date',
                                   isDense: true,
                                   hintStyle: TextStyle(
                                       fontSize: 14,
                                       color: Colors.grey.withOpacity(0.5)),
                                   filled: true,
-                                  fillColor: Colors.white,
+                                  fillColor: isReadAmt
+                                      ? Colors.grey.withOpacity(0.1)
+                                      : Colors.white,
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(10),
                                     borderSide: BorderSide.none,
@@ -1023,12 +1055,14 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                                 width: 1.0, color: Color(0xFFEAEAEA))),
                         child: SizedBox(
                           width: double.infinity,
-                          height: 135,
+                          height: 128,
                           child: TextFormField(
                             keyboardType: TextInputType.text,
                             maxLines: 6,
                             readOnly: isReadRemark,
                             controller: ctrlRemark,
+                            style: TextStyle(
+                                color: isReadAmt ? Colors.grey : Colors.black),
                             decoration: InputDecoration(
                                 hintText: 'Remark',
                                 isDense: true,
@@ -1036,7 +1070,9 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                                     fontSize: 14,
                                     color: Colors.grey.withOpacity(0.5)),
                                 filled: true,
-                                fillColor: Colors.white,
+                                fillColor: isReadAmt
+                                    ? Colors.grey.withOpacity(0.1)
+                                    : Colors.white,
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
                                   borderSide: BorderSide.none,
@@ -1073,223 +1109,157 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                               ),
                             ],
                           ),
-                          GestureDetector(
-                            onTap: isReadAmt
-                                ? null
-                                : () {
-                                    _showBottomAttachment(context);
-                                  },
-                            child: Padding(
-                              padding: const EdgeInsets.only(right: 8.0),
-                              child: Image.asset(
-                                'assets/icon/plus.png',
-                                width: 20,
-                                height: 20,
-                              ),
-                            ),
-                          )
+                          !isReadAmt
+                              ? GestureDetector(
+                                  onTap: isReadAmt
+                                      ? null
+                                      : () {
+                                          _showBottomAttachment(context);
+                                        },
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(right: 8.0),
+                                    child: Image.asset(
+                                      'assets/icon/plus.png',
+                                      width: 20,
+                                      height: 20,
+                                    ),
+                                  ),
+                                )
+                              : Container()
                         ],
                       ),
                       const SizedBox(height: 8),
-                      widget.agreementList.attachmentList != null
+                      attachment.isNotEmpty
                           ? ListView.separated(
                               shrinkWrap: true,
-                              itemCount:
-                                  widget.agreementList.attachmentList!.length,
+                              itemCount: attachment.length,
                               physics: const NeverScrollableScrollPhysics(),
                               separatorBuilder:
                                   (BuildContext context, int index) {
                                 return const SizedBox(height: 16);
                               },
                               itemBuilder: (BuildContext context, int index) {
-                                return Container(
-                                  width: MediaQuery.of(context).size.width,
-                                  height: 75,
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                      color: const Color(0xFFF8FAFE),
-                                      border: Border.all(
-                                          color: const Color(0xFFF8FAFE)),
-                                      borderRadius: const BorderRadius.all(
-                                          Radius.circular(10))),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          SvgPicture.asset(
-                                            'assets/icon/file.svg',
-                                            height: 28,
-                                            width: 28,
-                                          ),
-                                          const SizedBox(width: 16),
-                                          Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Text(
-                                                'File ${widget.agreementList.attachmentList![index].fileName!.substring(0, 25)}',
-                                                style: const TextStyle(
-                                                    color: Colors.black,
-                                                    fontSize: 14,
-                                                    fontWeight:
-                                                        FontWeight.w500),
-                                              ),
-                                              Text(
-                                                '${widget.agreementList.attachmentList![index].fileSize} KB . ${widget.agreementList.attachmentList![index].modDate}  ',
-                                                style: const TextStyle(
-                                                    color: Color(0xFF71839B),
-                                                    fontSize: 12,
-                                                    fontWeight:
-                                                        FontWeight.w400),
-                                              ),
-                                            ],
-                                          )
-                                        ],
-                                      ),
-                                      Row(
-                                        children: [
-                                          SvgPicture.asset(
-                                            'assets/icon/download.svg',
-                                            height: 20,
-                                            width: 20,
-                                          ),
-                                          const SizedBox(width: 16),
-                                          SvgPicture.asset(
-                                            'assets/icon/trash.svg',
-                                            height: 20,
-                                            width: 20,
-                                          ),
-                                        ],
-                                      )
-                                    ],
+                                return InkWell(
+                                  onTap: () {
+                                    if (attachment[index].ext != null) {
+                                      Navigator.pushNamed(
+                                          context,
+                                          StringRouterUtil
+                                              .imageAssetScreenRoute,
+                                          arguments:
+                                              attachment[index].filePath);
+                                    } else {
+                                      Navigator.pushNamed(
+                                          context,
+                                          StringRouterUtil
+                                              .imageNetworkScreenRoute,
+                                          arguments:
+                                              AttachmentPreviewRequestModel(
+                                                  pFileName: attachment[index]
+                                                      .fileName,
+                                                  pFilePaths: attachment[index]
+                                                      .filePath));
+                                    }
+                                  },
+                                  child: Container(
+                                    width: MediaQuery.of(context).size.width,
+                                    height: 75,
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                        color: const Color(0xFFF8FAFE),
+                                        border: Border.all(
+                                            color: const Color(0xFFF8FAFE)),
+                                        borderRadius: const BorderRadius.all(
+                                            Radius.circular(10))),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            SvgPicture.asset(
+                                              'assets/icon/file.svg',
+                                              height: 28,
+                                              width: 28,
+                                            ),
+                                            const SizedBox(width: 16),
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  'File ${attachment[index].fileName!.substring(0, 25)}',
+                                                  style: const TextStyle(
+                                                      color: Colors.black,
+                                                      fontSize: 14,
+                                                      fontWeight:
+                                                          FontWeight.w500),
+                                                ),
+                                                Text(
+                                                  '${attachment[index].fileSize} KB . ${attachment[index].modDate}  ',
+                                                  style: const TextStyle(
+                                                      color: Color(0xFF71839B),
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w400),
+                                                ),
+                                              ],
+                                            )
+                                          ],
+                                        ),
+                                        Row(
+                                          children: [
+                                            SvgPicture.asset(
+                                              'assets/icon/download.svg',
+                                              height: 20,
+                                              width: 20,
+                                            ),
+                                            const SizedBox(width: 16),
+                                            SvgPicture.asset(
+                                              'assets/icon/trash.svg',
+                                              height: 20,
+                                              width: 20,
+                                              color: isReadAmt
+                                                  ? Colors.grey
+                                                  : Colors.red,
+                                            ),
+                                          ],
+                                        )
+                                      ],
+                                    ),
                                   ),
                                 );
                               })
-                          : attachment.isEmpty
-                              ? Container(
-                                  width: MediaQuery.of(context).size.width,
-                                  height: 123,
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                      color: const Color(0xFFFBFBFB),
-                                      border: Border.all(
-                                          color: const Color(0xFFEAEAEA)),
-                                      borderRadius: const BorderRadius.all(
-                                          Radius.circular(10))),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: const [
-                                      Center(
-                                          child: Icon(
-                                        Icons.camera_alt_outlined,
-                                        size: 35,
-                                      )),
-                                      Text(
-                                        'No Attachment',
-                                        style: TextStyle(
-                                            color: Colors.black,
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500),
-                                      ),
-                                    ],
+                          : Container(
+                              width: MediaQuery.of(context).size.width,
+                              height: 123,
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                  color: const Color(0xFFFBFBFB),
+                                  border: Border.all(
+                                      color: const Color(0xFFEAEAEA)),
+                                  borderRadius: const BorderRadius.all(
+                                      Radius.circular(10))),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: const [
+                                  Center(
+                                      child: Icon(
+                                    Icons.camera_alt_outlined,
+                                    size: 35,
+                                  )),
+                                  Text(
+                                    'No Attachment',
+                                    style: TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500),
                                   ),
-                                )
-                              : ListView.separated(
-                                  shrinkWrap: true,
-                                  itemCount: attachment.length,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  separatorBuilder:
-                                      (BuildContext context, int index) {
-                                    return const SizedBox(height: 16);
-                                  },
-                                  itemBuilder:
-                                      (BuildContext context, int index) {
-                                    return Container(
-                                      width: MediaQuery.of(context).size.width,
-                                      height: 75,
-                                      padding: const EdgeInsets.all(16),
-                                      decoration: BoxDecoration(
-                                          color: const Color(0xFFF8FAFE),
-                                          border: Border.all(
-                                              color: const Color(0xFFF8FAFE)),
-                                          borderRadius: const BorderRadius.all(
-                                              Radius.circular(10))),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              SvgPicture.asset(
-                                                'assets/icon/file.svg',
-                                                height: 28,
-                                                width: 28,
-                                              ),
-                                              const SizedBox(width: 16),
-                                              Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                children: [
-                                                  Row(
-                                                    children: [
-                                                      Text(
-                                                        'File ${attachment[index].basename.substring(0, 22)}',
-                                                        style: const TextStyle(
-                                                            color: Colors.black,
-                                                            fontSize: 14,
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .w500),
-                                                      ),
-                                                      Text(
-                                                        attachment[index].ext,
-                                                        style: const TextStyle(
-                                                            color: Colors.black,
-                                                            fontSize: 14,
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .w500),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  Text(
-                                                    '${attachment[index].size} KB . ${attachment[index].date}  ',
-                                                    style: const TextStyle(
-                                                        color:
-                                                            Color(0xFF71839B),
-                                                        fontSize: 12,
-                                                        fontWeight:
-                                                            FontWeight.w400),
-                                                  ),
-                                                ],
-                                              )
-                                            ],
-                                          ),
-                                          Row(
-                                            children: [
-                                              SvgPicture.asset(
-                                                'assets/icon/download.svg',
-                                                height: 20,
-                                                width: 20,
-                                              ),
-                                              const SizedBox(width: 16),
-                                              SvgPicture.asset(
-                                                'assets/icon/trash.svg',
-                                                height: 20,
-                                                width: 20,
-                                              ),
-                                            ],
-                                          )
-                                        ],
-                                      ),
-                                    );
-                                  })
+                                ],
+                              ),
+                            )
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -1364,9 +1334,16 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                         )
                       ],
                       child: InkWell(
-                        onTap:
-                            isLoading || widget.agreementList.resultCode != ''
-                                ? null
+                        onTap: isLoading ||
+                                widget.agreementList.resultCode != ''
+                            ? null
+                            : ctrlRemark.text.isEmpty ||
+                                    ctrlRemark.text == '' ||
+                                    attachment.isEmpty
+                                ? () {
+                                    GeneralUtil().showSnackBarError(context,
+                                        'Remarks dan Attachment tidak boleh kosong');
+                                  }
                                 : () {
                                     updateRequestModel.pResultPaymentAmount =
                                         int.parse(paidAmountValue == ''

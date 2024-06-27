@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile_collection/feature/assignment/data/task_list_response_model.dart';
 import 'package:mobile_collection/feature/invoice_history/bloc/history_bloc/bloc.dart';
 import 'package:mobile_collection/feature/invoice_history/domain/repo/history_repo.dart';
@@ -208,9 +209,7 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                             alignment: Alignment.centerLeft,
                             child: Text(
                               GeneralUtil.convertToIdr(
-                                  widget
-                                      .agreementList.overdueInstallmentAmount!,
-                                  2),
+                                  widget.agreementList.installmentAmount!, 2),
                               style: const TextStyle(
                                   color: Color(0xFF565656),
                                   fontSize: 14,
@@ -274,7 +273,6 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                                           (BuildContext context, int index) {
                                         return const SizedBox(height: 8);
                                       },
-                                      padding: const EdgeInsets.all(16),
                                       itemBuilder:
                                           (BuildContext context, int index) {
                                         return Container(
@@ -311,6 +309,20 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                                 itemCount:
                                     state.historyResponseModel.data!.length,
                                 itemBuilder: (context, index) {
+                                  String date = '';
+
+                                  if (state.historyResponseModel.data![index]
+                                          .resultPromiseDate !=
+                                      null) {
+                                    DateTime tempDate = DateFormat('yyyy-MM-dd')
+                                        .parse(state.historyResponseModel
+                                            .data![index].resultPromiseDate!);
+                                    var inputDate =
+                                        DateTime.parse(tempDate.toString());
+                                    var outputFormat =
+                                        DateFormat('dd MMMM yyyy');
+                                    date = outputFormat.format(inputDate);
+                                  }
                                   return GestureDetector(
                                       onTap: () {},
                                       child: Container(
@@ -432,7 +444,7 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                                                                     .start,
                                                             children: [
                                                               const Text(
-                                                                'Budi',
+                                                                'Nama PIC',
                                                                 style: TextStyle(
                                                                     fontSize:
                                                                         15,
@@ -454,11 +466,7 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                                                                   const SizedBox(
                                                                       width: 8),
                                                                   Text(
-                                                                    state
-                                                                            .historyResponseModel
-                                                                            .data![index]
-                                                                            .resultPromiseDate ??
-                                                                        '-',
+                                                                    date,
                                                                     style: const TextStyle(
                                                                         fontSize:
                                                                             12,
@@ -533,7 +541,6 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                                         (BuildContext context, int index) {
                                       return const SizedBox(height: 8);
                                     },
-                                    padding: const EdgeInsets.all(16),
                                     itemBuilder:
                                         (BuildContext context, int index) {
                                       return Container(

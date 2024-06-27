@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -167,16 +169,25 @@ class _AmortizationScreenState extends State<AmortizationScreen> {
                             padding: const EdgeInsets.all(4),
                             itemBuilder: (BuildContext context, int index) {
                               String dateDue = '';
+                              late DateTime tempDateDue;
                               String payDate = '';
+                              DateTime? selectedDate = DateTime.now();
+                              DateTime dateNows = selectedDate.getDateOnly();
                               if (state.amortizationResponseModel.data![index]
                                       .dueDate !=
                                   '') {
                                 DateTime tempDate = DateFormat('dd/MM/yyyy')
                                     .parse(state.amortizationResponseModel
                                         .data![index].dueDate!);
+                                DateTime tempDateComp = DateFormat('dd/MM/yyyy')
+                                    .parse(state.amortizationResponseModel
+                                        .data![index].dueDate!);
                                 var inputDate =
                                     DateTime.parse(tempDate.toString());
-                                var outputFormat = DateFormat('dd MMM yyyy');
+                                tempDateDue =
+                                    DateTime.parse(tempDateComp.toString());
+                                var outputFormat = DateFormat('dd MMMM yyyy');
+
                                 dateDue = outputFormat.format(inputDate);
                               }
                               if (state.amortizationResponseModel.data![index]
@@ -189,11 +200,17 @@ class _AmortizationScreenState extends State<AmortizationScreen> {
                                         .paymentDate!);
                                 var inputDate =
                                     DateTime.parse(tempDate.toString());
-                                var outputFormat = DateFormat('dd MMM yyyy');
+                                var outputFormat = DateFormat('dd MMMM yyyy');
                                 payDate = outputFormat.format(inputDate);
                               }
+                              log(tempDateDue.toString());
+                              log(dateNows.toString());
                               return Container(
-                                color: Colors.white,
+                                color: tempDateDue.isBefore(dateNows) &&
+                                        state.amortizationResponseModel
+                                            .data![index].paymentList!.isEmpty
+                                    ? Colors.red.withOpacity(0.5)
+                                    : Colors.white,
                                 child: Padding(
                                   padding: const EdgeInsets.only(
                                       left: 8.0,
@@ -317,5 +334,11 @@ class _AmortizationScreenState extends State<AmortizationScreen> {
         ),
       ),
     );
+  }
+}
+
+extension MyDateExtension on DateTime {
+  DateTime getDateOnly() {
+    return DateTime(year, month, day);
   }
 }

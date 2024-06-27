@@ -39,7 +39,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
       filter.add(const CustDropdownMenuItem(
           value: 1, data: 'COMPLETED', child: Text("COMPLETED")));
       filter.add(const CustDropdownMenuItem(
-          value: 2, data: 'UNFINISHED', child: Text("UNFINISHED")));
+          value: 2, data: 'INCOMPLETE', child: Text("INCOMPLETE")));
     });
   }
 
@@ -180,13 +180,10 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                         if (val == 0) {
                           dataFilter = [];
                           dataFilter.addAll(data);
-                        } else if (val == 1) {
-                          dataFilter = data
-                              .where((element) => element.invoiceCount == 0)
-                              .toList();
                         } else {
                           dataFilter = data
-                              .where((element) => element.invoiceCount! > 0)
+                              .where((element) =>
+                                  element.taskStatus == filter[val].data)
                               .toList();
                         }
                       });
@@ -517,7 +514,7 @@ class _AssignmentScreenState extends State<AssignmentScreen> {
                                                                     .end,
                                                             children: [
                                                               Text(
-                                                                'Outstanding Invoices',
+                                                                'Total Overdue Installment Amount',
                                                                 style: TextStyle(
                                                                     fontSize:
                                                                         10,

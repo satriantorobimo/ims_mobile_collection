@@ -1,7 +1,10 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_collection/components/color_comp.dart';
+import 'package:mobile_collection/feature/amortization/amortization_screen.dart';
 import 'package:mobile_collection/feature/login/bloc/auth_bloc/bloc.dart';
 import 'package:mobile_collection/feature/login/data/auth_response_model.dart';
 import 'package:mobile_collection/feature/login/data/login_model.dart';
@@ -353,16 +356,17 @@ class _FormWidgetState extends State<FormWidget> {
                 if (state.authResponseModel.datalist != null) {
                   _processDb(state.authResponseModel.datalist![0])
                       .then((value) async {
-                    await DatabaseHelper.getDateLogin();
                     DateTime? selectedDate = DateTime.now();
-                    var dateNows =
-                        DateFormat('dd-MM-yyyy').format(selectedDate);
+                    DateTime dateNows = selectedDate.getDateOnly();
+                    log(dateNows.toString());
                     List<LoginModel> loginModel = [];
-                    final FirebaseNotificationService firebaseNotificationService =
-                    FirebaseNotificationService();
-                    await firebaseNotificationService.fcmSubscribe(state.authResponseModel.datalist![0].uid!);
+                    final FirebaseNotificationService
+                        firebaseNotificationService =
+                        FirebaseNotificationService();
+                    await firebaseNotificationService.fcmSubscribe(
+                        state.authResponseModel.datalist![0].uid!);
                     loginModel.add(LoginModel(
-                        date: dateNows,
+                        date: dateNows.toString(),
                         uid: state.authResponseModel.datalist![0].uid!));
                     await DatabaseHelper.insertDateLogin(loginModel);
                     SharedPrefUtil.saveSharedString(

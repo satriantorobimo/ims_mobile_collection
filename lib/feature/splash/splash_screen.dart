@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile_collection/feature/amortization/amortization_screen.dart';
 import 'package:mobile_collection/utility/database_helper.dart';
 import 'package:mobile_collection/utility/shared_pref_util.dart';
 import 'package:mobile_collection/utility/string_router_util.dart';
@@ -27,12 +28,12 @@ class _SplashScreenState extends State<SplashScreen> {
               context, StringRouterUtil.loginScreenRoute, (route) => false);
         } else {
           final data = await DatabaseHelper.getDateLogin();
-          DateTime? selectedDate = DateTime.now();
-          var dateNows = DateFormat('dd-MM-yyyy').format(selectedDate);
-          if (dateNows.compareTo(data[0]['date']) != 0) {
+          DateTime? selectedDate = DateTime.now().getDateOnly();
+          DateTime tempDate = DateFormat('dd/MM/yyyy').parse(data[0]['date']);
+          if (selectedDate.isAfter(tempDate)) {
             await DatabaseHelper.deleteData();
             await DatabaseHelper.updateDateLogin(
-                date: dateNows, uid: data[0]['uid']);
+                date: selectedDate.toString(), uid: data[0]['uid']);
           }
           if (!mounted) return;
           Navigator.pushNamedAndRemoveUntil(

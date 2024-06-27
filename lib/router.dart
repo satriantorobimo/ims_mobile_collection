@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_collection/feature/amortization/amortization_screen.dart';
 import 'package:mobile_collection/feature/assignment/data/task_list_response_model.dart';
-
+import 'package:mobile_collection/feature/invoice_detail/data/attachment_preview_request_model.dart';
 import 'package:mobile_collection/feature/invoice_detail/invoice_detail_screen.dart';
+import 'package:mobile_collection/feature/invoice_detail/widget/attachment_preview_asset_screen.dart';
+import 'package:mobile_collection/feature/invoice_detail/widget/attachment_preview_image_screen.dart';
 import 'package:mobile_collection/feature/invoice_history/invoice_history_screen.dart';
 import 'package:mobile_collection/feature/login/login_screen.dart';
 import 'package:mobile_collection/feature/splash/splash_screen.dart';
@@ -65,6 +67,24 @@ class Routers {
         return PageRouteBuilder<dynamic>(
             pageBuilder: (_, __, ___) =>
                 AmortizationScreen(agreementList: agreementList),
+            settings: RouteSettings(name: settings.name),
+            transitionsBuilder: (_, Animation<double> a, __, Widget c) =>
+                FadeTransition(opacity: a, child: c));
+
+      case StringRouterUtil.imageAssetScreenRoute:
+        final String path = settings.arguments as String;
+        return PageRouteBuilder<dynamic>(
+            pageBuilder: (_, __, ___) => AttachmentPreviewAssetScreen(path),
+            settings: RouteSettings(name: settings.name),
+            transitionsBuilder: (_, Animation<double> a, __, Widget c) =>
+                FadeTransition(opacity: a, child: c));
+
+      case StringRouterUtil.imageNetworkScreenRoute:
+        final AttachmentPreviewRequestModel attachmentPreviewRequestModel =
+            settings.arguments as AttachmentPreviewRequestModel;
+        return PageRouteBuilder<dynamic>(
+            pageBuilder: (_, __, ___) =>
+                AttachmentPreviewImageScreen(attachmentPreviewRequestModel),
             settings: RouteSettings(name: settings.name),
             transitionsBuilder: (_, Animation<double> a, __, Widget c) =>
                 FadeTransition(opacity: a, child: c));

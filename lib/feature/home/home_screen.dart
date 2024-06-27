@@ -5,14 +5,20 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile_collection/components/color_comp.dart';
+import 'package:mobile_collection/feature/amortization/amortization_screen.dart';
 import 'package:mobile_collection/feature/assignment/domain/repo/task_repo.dart';
 import 'package:mobile_collection/feature/home/bloc/dashboard_bloc/bloc.dart';
 import 'package:mobile_collection/feature/home/domain/repo/dashboard_repo.dart';
 import 'package:mobile_collection/feature/home/provider/home_provider.dart';
+import 'package:mobile_collection/feature/tab/provider/tab_provider.dart';
 import 'package:mobile_collection/utility/database_helper.dart';
 import 'package:mobile_collection/utility/drop_down_util.dart';
+import 'package:mobile_collection/utility/firebase_notification_service.dart';
 import 'package:mobile_collection/utility/general_util.dart';
 import 'package:mobile_collection/utility/network_util.dart';
+import 'package:mobile_collection/utility/shared_pref_util.dart';
+import 'package:mobile_collection/utility/string_router_util.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
@@ -102,6 +108,101 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  Future<void> showBottomExpired() {
+    return showModalBottomSheet(
+        context: context,
+        isDismissible: false,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(24),
+          ),
+        ),
+        clipBehavior: Clip.antiAliasWithSaveLayer,
+        builder: (context) {
+          return StatefulBuilder(
+              builder: (BuildContext context, StateSetter setStates) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                Padding(
+                    padding:
+                        const EdgeInsets.only(top: 32.0, left: 24, right: 24),
+                    child: Center(
+                      child: Image.asset(
+                        'assets/img/back.png',
+                        width: 150,
+                      ),
+                    )),
+                Padding(
+                  padding: const EdgeInsets.only(
+                      top: 24.0, left: 24, right: 24, bottom: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: const [
+                      Text(
+                        'Sesi Anda Telah Habis',
+                        style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500),
+                      ),
+                      Text(
+                        'Silahkan Login Ulang',
+                        style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w300),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Padding(
+                  padding: const EdgeInsets.only(left: 16.0, right: 16.0),
+                  child: InkWell(
+                    onTap: () async {
+                      final FirebaseNotificationService
+                          firebaseNotificationService =
+                          FirebaseNotificationService();
+                      final data = await DatabaseHelper.getUserData();
+
+                      await firebaseNotificationService
+                          .fcmUnSubscribe(data[0]['uid']);
+
+                      SharedPrefUtil.deleteSharedPref('token');
+                      await DatabaseHelper.deleteUser();
+                      if (!mounted) return;
+                      var bottomBarProvider =
+                          Provider.of<TabProvider>(context, listen: false);
+                      bottomBarProvider.setPage(0);
+                      bottomBarProvider.setTab(0);
+                      Navigator.pushNamedAndRemoveUntil(context,
+                          StringRouterUtil.loginScreenRoute, (route) => false);
+                    },
+                    child: Container(
+                      width: MediaQuery.of(context).size.width * 0.4,
+                      height: 45,
+                      decoration: BoxDecoration(
+                        color: primaryColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Center(
+                          child: Text('OK',
+                              style: TextStyle(
+                                  fontSize: 15,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600))),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 32),
+              ],
+            );
+          });
+        });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -148,12 +249,15 @@ class _HomeScreenState extends State<HomeScreen> {
               if (state is TaskListLoaded) {
                 final data = await DatabaseHelper.getDateLogin();
                 DateTime? selectedDate = DateTime.now();
-                var dateNows = DateFormat('dd-MM-yyyy').format(selectedDate);
-                log(data[0]['date']);
-                if (dateNows.compareTo(data[0]['date']) != 0) {
+                DateTime dateNows = selectedDate.getDateOnly();
+                log(dateNows.toString());
+                DateTime tempDate =
+                    DateFormat('yyyy-MM-dd').parse(data[0]['date']);
+                log(tempDate.toString());
+                if (selectedDate.isAfter(tempDate)) {
                   await DatabaseHelper.deleteData();
                   await DatabaseHelper.updateDateLogin(
-                      date: dateNows, uid: data[0]['uid']);
+                      date: dateNows.toString(), uid: data[0]['uid']);
                 }
                 await DatabaseHelper.insertCust(
                     state.taskListResponseModel.data!);
@@ -182,11 +286,20 @@ class _HomeScreenState extends State<HomeScreen> {
               }
               if (state is TaskListError) {
                 if (!mounted) return;
-                GeneralUtil().showSnackBarError(context, state.error!);
+                if (state.error! == 'expired') {
+                  showBottomExpired();
+                } else {
+                  GeneralUtil().showSnackBarError(context, state.error!);
+                }
               }
               if (state is TaskListException) {
                 if (!mounted) return;
-                GeneralUtil().showSnackBarError(context, state.error);
+                if (state.error == 'expired') {
+                  showBottomExpired();
+                } else {
+                  GeneralUtil()
+                      .showSnackBarError(context, 'Internal Server Error');
+                }
               }
             },
             child: BlocBuilder(
@@ -832,6 +945,7 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
+                  width: MediaQuery.of(context).size.width * 0.44,
                   padding: const EdgeInsets.all(22),
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -871,6 +985,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     reverse: true,
                   )),
               Container(
+                  width: MediaQuery.of(context).size.width * 0.44,
                   padding: const EdgeInsets.all(22),
                   decoration: BoxDecoration(
                     color: Colors.white,

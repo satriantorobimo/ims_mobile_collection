@@ -1,6 +1,5 @@
 import 'dart:developer' as dev;
 import 'package:flutter/material.dart';
-import 'package:mobile_collection/feature/invoice_detail/data/attachment_model.dart';
 import 'package:mobile_collection/feature/login/data/auth_response_model.dart';
 import 'package:mobile_collection/feature/login/data/login_model.dart';
 import 'package:sqflite/sqflite.dart';
@@ -134,23 +133,13 @@ class DatabaseHelper {
       )
       """);
 
-    await database.execute("""CREATE TABLE attachment(
-        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-        task_id INTEGER,
-        path TEXT,
-        basename TEXT,
-        ext TEXT,
-        size TEXT,
-        date TEXT
-      )
-      """);
-
     await database.execute("""CREATE TABLE attachmentlist(
         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         task_id INTEGER,
         attachment_id INTEGER,
         file_name TEXT,
         file_path TEXT,
+        ext TEXT,
         file_size INTEGER,
         mod_date TEXT
       )
@@ -160,7 +149,7 @@ class DatabaseHelper {
   static Future<sql.Database> db() async {
     return sql.openDatabase(
       'salesorder.db',
-      version: 9,
+      version: 10,
       onCreate: (sql.Database database, int version) async {
         await createTables(database);
       },
@@ -195,26 +184,6 @@ class DatabaseHelper {
         Batch batch = db.batch();
         for (var val in data) {
           batch.insert('datelogin', val.toMap(),
-              conflictAlgorithm: sql.ConflictAlgorithm.replace);
-        }
-        batch.commit();
-        await db.close();
-      } catch (e) {
-        dev.log('Error $e');
-      }
-    });
-
-    //  return _lock.synchronized(() async{});
-  }
-
-  // Insert Attachment
-  static Future<void> insertAttachment(List<Attachment> data) async {
-    return _lock.synchronized(() async {
-      try {
-        final db = await DatabaseHelper.db();
-        Batch batch = db.batch();
-        for (var val in data) {
-          batch.insert('attachment', val.toMap(),
               conflictAlgorithm: sql.ConflictAlgorithm.replace);
         }
         batch.commit();
@@ -408,27 +377,14 @@ class DatabaseHelper {
   }
 
   // Read all attachment
-  static Future<List<Attachment>> getAttachment(String taskId) async {
-    return _lock.synchronized(() async {
-      final db = await DatabaseHelper.db();
-      List<Map<String, dynamic>> maps = await db
-          .query('attachment', where: "task_id != ?", whereArgs: [taskId]);
-      await db.close();
-      return List.generate(maps.length, (i) {
-        return Attachment.fromMap(maps[i]);
-      });
-    });
-  }
-
-  // Read all attachment
-  static Future<List<Attachment>> getAttachmentList(String taskId) async {
+  static Future<List<AttachmentList>> getAttachmentList(String taskId) async {
     return _lock.synchronized(() async {
       final db = await DatabaseHelper.db();
       List<Map<String, dynamic>> maps = await db
           .query('attachmentlist', where: "task_id != ?", whereArgs: [taskId]);
       await db.close();
       return List.generate(maps.length, (i) {
-        return Attachment.fromMap(maps[i]);
+        return AttachmentList.fromMap(maps[i]);
       });
     });
   }
@@ -618,7 +574,6 @@ class DatabaseHelper {
         await db.delete('history');
         await db.delete('dailystatus');
         await db.delete('achieve');
-        await db.delete('attachment');
         await db.delete('attachmentlist');
       } catch (err) {
         debugPrint("Something went wrong when deleting an item: $err");

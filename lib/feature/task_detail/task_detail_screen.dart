@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:map_launcher/map_launcher.dart' as maps;
 import 'package:mobile_collection/components/color_comp.dart';
@@ -28,6 +29,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   @override
   void initState() {
     getCurrentLocation();
+
     super.initState();
   }
 
@@ -618,6 +620,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: widget.data.agreementList!.length,
                     itemBuilder: (context, index) {
+                      String dueDate = '';
+                      DateTime tempDate = DateFormat('dd-MM-yyyy').parse(widget
+                          .data.agreementList![index].installmentDueDate!);
+                      var inputDate = DateTime.parse(tempDate.toString());
+                      var outputFormat = DateFormat('dd MMMM yyyy');
+                      dueDate = outputFormat.format(inputDate);
                       return GestureDetector(
                         onTap: () {
                           Navigator.pushNamed(context,
@@ -649,12 +657,23 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                                       height: 30,
                                       decoration: BoxDecoration(
                                           color: widget
-                                                      .data
-                                                      .agreementList![index]
-                                                      .resultCode !=
-                                                  ''
+                                                          .data
+                                                          .agreementList![index]
+                                                          .resultCode !=
+                                                      'NOT PAID' &&
+                                                  widget
+                                                          .data
+                                                          .agreementList![index]
+                                                          .resultCode !=
+                                                      ''
                                               ? const Color(0xFF70B96E)
-                                              : const Color(0xFFFF6969),
+                                              : widget
+                                                          .data
+                                                          .agreementList![index]
+                                                          .resultCode ==
+                                                      ''
+                                                  ? Colors.grey
+                                                  : const Color(0xFFFF6969),
                                           borderRadius: const BorderRadius.only(
                                             topRight: Radius.circular(18.0),
                                             bottomLeft: Radius.circular(8.0),
@@ -664,8 +683,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                                           widget.data.agreementList![index]
                                                       .resultCode !=
                                                   ''
-                                              ? 'Paid'
-                                              : 'Not Paid',
+                                              ? widget
+                                                  .data
+                                                  .agreementList![index]
+                                                  .resultCode!
+                                              : '-',
                                           style: const TextStyle(
                                               fontSize: 13,
                                               fontWeight: FontWeight.w300,
@@ -765,10 +787,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                                                     ),
                                                     const SizedBox(width: 8),
                                                     Text(
-                                                      widget
-                                                          .data
-                                                          .agreementList![index]
-                                                          .installmentDueDate!,
+                                                      dueDate,
                                                       style: const TextStyle(
                                                           fontSize: 12,
                                                           fontWeight:

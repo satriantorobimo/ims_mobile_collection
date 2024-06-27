@@ -126,38 +126,49 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   Widget mainContent(List<Data> data) {
-    return ListView.separated(
-      separatorBuilder: (context, index) => const SizedBox(height: 16),
-      itemCount: data.length,
-      padding: const EdgeInsets.only(top: 16, bottom: 16),
-      itemBuilder: (context, index) {
-        DateTime tempDate =
-            DateFormat('yyyy-MM-dd').parse(data[index].creDate!);
-        return ListTile(
-          title: Text(
-            data[index].title!,
-            style: const TextStyle(
-                color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          subtitle: Text(
-            data[index].message!,
-            style: const TextStyle(
+    return data.isEmpty
+        ? const Center(
+            child: Text(
+            'Saat ini anda belum dapat Notifikasi',
+            style: TextStyle(
                 color: Color(0xFF7C7C7C),
                 fontSize: 14,
                 fontWeight: FontWeight.w400),
-          ),
-          trailing: SizedBox(
-            height: double.infinity,
-            child: Text(
-              timeago.format(tempDate),
-              style: const TextStyle(
-                  color: Color(0xFF7C7C7C),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400),
-            ),
-          ),
-        );
-      },
-    );
+          ))
+        : ListView.separated(
+            separatorBuilder: (context, index) => const SizedBox(height: 16),
+            itemCount: data.length,
+            padding: const EdgeInsets.only(top: 16, bottom: 16),
+            itemBuilder: (context, index) {
+              DateTime tempDate =
+                  DateFormat('yyyy-MM-dd').parse(data[index].creDate!);
+              return ListTile(
+                title: Text(
+                  data[index].title!,
+                  style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(
+                  data[index].message!,
+                  style: const TextStyle(
+                      color: Color(0xFF7C7C7C),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400),
+                ),
+                trailing: SizedBox(
+                  height: double.infinity,
+                  child: Text(
+                    timeago.format(tempDate),
+                    style: const TextStyle(
+                        color: Color(0xFF7C7C7C),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400),
+                  ),
+                ),
+              );
+            },
+          );
   }
 }

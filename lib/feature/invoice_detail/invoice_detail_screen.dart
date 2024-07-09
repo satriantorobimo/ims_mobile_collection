@@ -551,6 +551,72 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
     }
   }
 
+  Future<void> showBottomFilter() {
+    return showModalBottomSheet(
+        context: context,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(24),
+          ),
+        ),
+        clipBehavior: Clip.antiAliasWithSaveLayer,
+        builder: (context) {
+          return Wrap(
+            children: <Widget>[
+              const Padding(
+                padding: EdgeInsets.only(top: 24.0, left: 16, right: 16),
+                child: Text(
+                  'Status',
+                  style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(
+                    top: 18.0, left: 24, right: 24, bottom: 24),
+                child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: filter.length,
+                    separatorBuilder: (BuildContext context, int index) {
+                      return const Padding(
+                        padding: EdgeInsets.only(top: 4, bottom: 4),
+                        child: Divider(),
+                      );
+                    },
+                    itemBuilder: (BuildContext context, int index) {
+                      return InkWell(
+                        onTap: () {
+                          setState(() {
+                            filterSelect = index;
+                          });
+                          Navigator.pop(context);
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              filter[index].data,
+                              style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                            filterSelect == index
+                                ? const Icon(Icons.check_rounded,
+                                    color: primaryColor)
+                                : Container()
+                          ],
+                        ),
+                      );
+                    }),
+              ),
+            ],
+          );
+        });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -852,48 +918,60 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                             fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 4),
-                      Container(
-                        width: MediaQuery.of(context).size.width,
-                        height: 45,
-                        padding: const EdgeInsets.all(8.0),
-                        decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.1),
-                                blurRadius: 6,
-                                offset: const Offset(-6, 4), // Shadow position
-                              ),
-                            ],
-                            color: isReadAmt
-                                ? Colors.grey.withOpacity(0.1)
-                                : Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFE1E1E1))),
-                        child: isReadAmt
-                            ? Padding(
-                                padding:
-                                    const EdgeInsets.only(left: 8.0, top: 5),
-                                child: Text(
-                                  '${filter[filterSelect].data}',
-                                  style: const TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w400),
+                      GestureDetector(
+                        onTap: isReadAmt ? null : showBottomFilter,
+                        child: Container(
+                          width: MediaQuery.of(context).size.width,
+                          height: 45,
+                          padding: const EdgeInsets.all(8.0),
+                          decoration: BoxDecoration(
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.1),
+                                  blurRadius: 6,
+                                  offset:
+                                      const Offset(-6, 4), // Shadow position
                                 ),
-                              )
-                            : CustDropDown(
-                                maxListHeight: 300,
-                                items: filter,
-                                hintText: "Select Status",
-                                borderRadius: 5,
-                                defaultSelectedIndex: 0,
-                                enabled: isReadStatus ? false : true,
-                                onChanged: (val) {
-                                  setState(() {
-                                    filterSelect = val;
-                                  });
-                                },
-                              ),
+                              ],
+                              color: isReadAmt
+                                  ? Colors.grey.withOpacity(0.1)
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border:
+                                  Border.all(color: const Color(0xFFE1E1E1))),
+                          child: isReadAmt
+                              ? Padding(
+                                  padding:
+                                      const EdgeInsets.only(left: 8.0, top: 5),
+                                  child: Text(
+                                    '${filter[filterSelect].data}',
+                                    style: const TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w400),
+                                  ),
+                                )
+                              : Padding(
+                                  padding: const EdgeInsets.only(
+                                      left: 8.0, right: 8),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        filter[filterSelect].data,
+                                        style: const TextStyle(
+                                            color: Colors.black,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w400),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Icon(
+                                          Icons.keyboard_arrow_down_rounded)
+                                    ],
+                                  ),
+                                ),
+                        ),
                       ),
                     ],
                   ),

@@ -203,6 +203,72 @@ class _HomeScreenState extends State<HomeScreen> {
         });
   }
 
+  Future<void> showBottomFilter() {
+    var homeProvider = Provider.of<HomeProvider>(context, listen: false);
+    int selectFilter = homeProvider.filterSelect;
+    return showModalBottomSheet(
+        context: context,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(24),
+          ),
+        ),
+        clipBehavior: Clip.antiAliasWithSaveLayer,
+        builder: (context) {
+          return Wrap(
+            children: <Widget>[
+              const Padding(
+                padding: EdgeInsets.only(top: 24.0, left: 16, right: 16),
+                child: Text(
+                  'Achievement',
+                  style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(
+                    top: 18.0, left: 24, right: 24, bottom: 24),
+                child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: filter.length,
+                    separatorBuilder: (BuildContext context, int index) {
+                      return const Padding(
+                        padding: EdgeInsets.only(top: 4, bottom: 4),
+                        child: Divider(),
+                      );
+                    },
+                    itemBuilder: (BuildContext context, int index) {
+                      return InkWell(
+                        onTap: () {
+                          homeProvider.setFilter(index);
+                          Navigator.pop(context);
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              filter[index].data,
+                              style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                            selectFilter == index
+                                ? const Icon(Icons.check_rounded,
+                                    color: primaryColor)
+                                : Container()
+                          ],
+                        ),
+                      );
+                    }),
+              ),
+            ],
+          );
+        });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -640,21 +706,24 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
-              Container(
-                width: MediaQuery.of(context).size.width * 0.28,
-                height: 45,
-                padding: const EdgeInsets.all(8.0),
-                child: CustDropDown(
-                  maxListHeight: 300,
-                  items: filter,
-                  hintText: "Select Filter",
-                  borderRadius: 5,
-                  defaultSelectedIndex: 0,
-                  onChanged: (val) {
-                    setState(() {
-                      selectFilter = val;
-                    });
-                  },
+              GestureDetector(
+                onTap: showBottomFilter,
+                child: Container(
+                  height: 45,
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    children: [
+                      Text(
+                        filter[selectFilter].data,
+                        style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w400),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.keyboard_arrow_down_rounded)
+                    ],
+                  ),
                 ),
               ),
             ],

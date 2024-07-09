@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:mobile_collection/feature/assignment/data/task_list_response_model.dart';
 import 'package:mobile_collection/feature/invoice_history/bloc/history_bloc/bloc.dart';
 import 'package:mobile_collection/feature/invoice_history/domain/repo/history_repo.dart';
-import 'package:mobile_collection/utility/drop_down_util.dart';
 import 'package:mobile_collection/utility/general_util.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -17,33 +16,15 @@ class InvoiceHistoryScreen extends StatefulWidget {
 }
 
 class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
-  late List<String> filterValue = ['PAID', 'PROMISE'];
-  late List<CustDropdownMenuItem> filter = [];
   String paidAmountValue = '';
   TextEditingController ctrlAmount = TextEditingController();
   TextEditingController ctrlRemark = TextEditingController();
   TextEditingController ctrlDate = TextEditingController();
   String dateSend = '';
   HistoryBloc historyBloc = HistoryBloc(historyRepo: HistoryRepo());
-  var filterSelect = 0;
-  Future<void> getStatus() async {
-    setState(() {
-      filter.add(const CustDropdownMenuItem(
-          value: 0, data: 'PAID', child: Text("PAID")));
-      filter.add(const CustDropdownMenuItem(
-          value: 1, data: 'ALREADY PAID', child: Text("ALREADY PAID")));
-      filter.add(const CustDropdownMenuItem(
-          value: 2, data: 'PROMISE', child: Text("PROMISE")));
-      filter.add(const CustDropdownMenuItem(
-          value: 3, data: 'NOT PAID', child: Text("NOT PAID")));
-      filter.add(const CustDropdownMenuItem(
-          value: 4, data: 'NOT FOUND', child: Text("NOT FOUND")));
-    });
-  }
 
   @override
   void initState() {
-    getStatus();
     historyBloc.add(HistoryAttempt(widget.agreementList.agreementNo!));
     super.initState();
   }

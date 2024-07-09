@@ -93,33 +93,30 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 return Shimmer.fromColors(
                   baseColor: Colors.grey.shade300,
                   highlightColor: Colors.grey.shade100,
-                  child: Expanded(
-                    child: ListView.separated(
-                        itemCount: 10,
-                        padding: const EdgeInsets.only(top: 16, bottom: 16),
-                        separatorBuilder: (BuildContext context, int index) {
-                          return const SizedBox(height: 16);
-                        },
-                        itemBuilder: (BuildContext context, int index) {
-                          return Container(
-                            height: 90,
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                  color: Colors.grey.withOpacity(0.05)),
-                              color: Colors.white,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.withOpacity(0.1),
-                                  blurRadius: 6,
-                                  offset:
-                                      const Offset(-6, 4), // Shadow position
-                                ),
-                              ],
-                            ),
-                          );
-                        }),
-                  ),
+                  child: ListView.separated(
+                      itemCount: 10,
+                      padding: const EdgeInsets.only(top: 16, bottom: 16),
+                      separatorBuilder: (BuildContext context, int index) {
+                        return const SizedBox(height: 16);
+                      },
+                      itemBuilder: (BuildContext context, int index) {
+                        return Container(
+                          height: 90,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                                color: Colors.grey.withOpacity(0.05)),
+                            color: Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.1),
+                                blurRadius: 6,
+                                offset: const Offset(-6, 4), // Shadow position
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
                 );
               })),
     );

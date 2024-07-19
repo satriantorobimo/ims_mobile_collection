@@ -197,14 +197,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     fontWeight: FontWeight.w400),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             InkWell(
               onTap: () {
                 showBottomLogout();
               },
               child: Container(
                 width: double.infinity,
-                height: 66,
+                height: 60,
                 decoration: BoxDecoration(
                   color: const Color(0xFFDF0000),
                   borderRadius: BorderRadius.circular(10),
@@ -252,7 +252,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 24),
         SizedBox(
           height: 75,
           child: Column(

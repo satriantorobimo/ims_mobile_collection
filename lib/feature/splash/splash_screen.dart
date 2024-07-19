@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_collection/feature/amortization/amortization_screen.dart';
@@ -29,7 +31,8 @@ class _SplashScreenState extends State<SplashScreen> {
         } else {
           final data = await DatabaseHelper.getDateLogin();
           DateTime? selectedDate = DateTime.now().getDateOnly();
-          DateTime tempDate = DateFormat('dd/MM/yyyy').parse(data[0]['date']);
+          log(selectedDate.toString());
+          DateTime tempDate = DateFormat('yyyy-MM-dd').parse(data[0]['date']);
           if (selectedDate.isAfter(tempDate)) {
             await DatabaseHelper.deleteData();
             await DatabaseHelper.updateDateLogin(

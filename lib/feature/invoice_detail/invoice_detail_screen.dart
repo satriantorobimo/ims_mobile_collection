@@ -375,6 +375,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                         vertical: 16.0, horizontal: 16.0),
                     child: InkWell(
                       onTap: () {
+                        Navigator.pop(context);
                         Navigator.pushNamed(
                             context, StringRouterUtil.invoiceHistoryScreenRoute,
                             arguments: widget.agreementList);
@@ -392,6 +393,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                         vertical: 16.0, horizontal: 16.0),
                     child: InkWell(
                       onTap: () {
+                        Navigator.pop(context);
                         Navigator.pushNamed(
                             context, StringRouterUtil.amortizationScreenRoute,
                             arguments: widget.agreementList);
@@ -459,7 +461,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                         vertical: 16.0, horizontal: 16.0),
                     child: InkWell(
                       onTap: () {
-                        pickImage().then((value) {
+                        pickImage(true).then((value) {
                           if (value == 'big') {
                             GeneralUtil()
                                 .showSnackBarError(context, 'Size Maximal 5MB');
@@ -486,7 +488,13 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                         vertical: 16.0, horizontal: 16.0),
                     child: InkWell(
                       onTap: () {
-                        Navigator.pop(context);
+                        pickImage(false).then((value) {
+                          if (value == 'big') {
+                            GeneralUtil()
+                                .showSnackBarError(context, 'Size Maximal 5MB');
+                          }
+                          Navigator.pop(context);
+                        });
                       },
                       child: Row(
                         children: const [
@@ -509,12 +517,12 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
         });
   }
 
-  Future<String> pickImage() async {
+  Future<String> pickImage(bool isCamera) async {
     try {
       var maxFileSizeInBytes = 5 * 1048576;
       ImagePicker imagePicker = ImagePicker();
       XFile? pickedImage = await imagePicker.pickImage(
-        source: ImageSource.camera,
+        source: isCamera ? ImageSource.camera : ImageSource.gallery,
         imageQuality: 90,
       );
       if (pickedImage == null) return 'notselect';
@@ -615,6 +623,31 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
             ],
           );
         });
+  }
+
+  void submitData(BuildContext context) {
+    updateRequestModel.pResultPaymentAmount =
+        int.parse(paidAmountValue == '' ? '0' : paidAmountValue);
+    updateRequestModel.pResultPromiseDate = dateSend;
+    updateRequestModel.pTaskId = widget.agreementList.taskId;
+    updateRequestModel.pResultRemarks = ctrlRemark.text;
+    updateRequestModel.pResultCode = filterValue[filterSelect];
+    loading(context);
+
+    NetworkInfo(internetConnectionChecker).isConnected.then((value) {
+      if (value) {
+        setState(() {
+          updateBloc.add(UpdateAttempt(updateRequestModel, collCode));
+        });
+      } else {
+        setState(() async {
+          updateData(updateRequestModel, false).then((value) {
+            Navigator.pop(context);
+            goHomeDraft();
+          });
+        });
+      }
+    });
   }
 
   @override
@@ -981,12 +1014,24 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Payment Amount',
-                          style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              'Payment Amount',
+                              style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              ' *',
+                              style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 8),
                         Material(
@@ -1054,12 +1099,24 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Promise Date',
-                          style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              'Promise Date',
+                              style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              ' *',
+                              style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 8),
                         Material(
@@ -1289,20 +1346,26 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                                         ),
                                         Row(
                                           children: [
-                                            SvgPicture.asset(
-                                              'assets/icon/download.svg',
-                                              height: 20,
-                                              width: 20,
-                                            ),
-                                            const SizedBox(width: 16),
-                                            SvgPicture.asset(
-                                              'assets/icon/trash.svg',
-                                              height: 20,
-                                              width: 20,
-                                              color: isReadAmt
-                                                  ? Colors.grey
-                                                  : Colors.red,
-                                            ),
+                                            isReadAmt
+                                                ? Container()
+                                                : SvgPicture.asset(
+                                                    'assets/icon/download.svg',
+                                                    height: 20,
+                                                    width: 20,
+                                                  ),
+                                            isReadAmt
+                                                ? Container()
+                                                : const SizedBox(width: 16),
+                                            isReadAmt
+                                                ? Container()
+                                                : SvgPicture.asset(
+                                                    'assets/icon/trash.svg',
+                                                    height: 20,
+                                                    width: 20,
+                                                    color: isReadAmt
+                                                        ? Colors.grey
+                                                        : Colors.red,
+                                                  ),
                                           ],
                                         )
                                       ],
@@ -1384,11 +1447,10 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                               setState(() {
                                 isLoading = false;
                               });
-                              // updateData(updateRequestModel, true)
-                              //     .then((value) {
-
-                              //   goHome();
-                              // });
+                              updateData(updateRequestModel, true)
+                                  .then((value) {
+                                goHome();
+                              });
                             }
                             if (state is UploadError) {
                               Navigator.pop(context);
@@ -1415,47 +1477,49 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                         onTap: isLoading ||
                                 widget.agreementList.resultCode != ''
                             ? null
-                            : ctrlRemark.text.isEmpty ||
-                                    ctrlRemark.text == '' ||
-                                    attachment.isEmpty
-                                ? () {
+                            : () {
+                                if (filterValue[filterSelect] == 'PAID' ||
+                                    filterValue[filterSelect] ==
+                                        'ALREADY PAID') {
+                                  if (ctrlRemark.text.isEmpty ||
+                                      ctrlRemark.text == '' ||
+                                      attachment.isEmpty ||
+                                      ctrlAmount.text.isEmpty ||
+                                      ctrlAmount.text == '') {
                                     GeneralUtil().showSnackBarError(context,
-                                        'Remarks dan Attachment tidak boleh kosong');
+                                        'Kolom Mandatory tidak boleh kosong');
+                                  } else {
+                                    submitData(context);
                                   }
-                                : () {
-                                    updateRequestModel.pResultPaymentAmount =
-                                        int.parse(paidAmountValue == ''
-                                            ? '0'
-                                            : paidAmountValue);
-                                    updateRequestModel.pResultPromiseDate =
-                                        dateSend;
-                                    updateRequestModel.pTaskId =
-                                        widget.agreementList.taskId;
-                                    updateRequestModel.pResultRemarks =
-                                        ctrlRemark.text;
-                                    updateRequestModel.pResultCode =
-                                        filterValue[filterSelect];
-                                    loading(context);
+                                }
 
-                                    NetworkInfo(internetConnectionChecker)
-                                        .isConnected
-                                        .then((value) {
-                                      if (value) {
-                                        setState(() {
-                                          updateBloc.add(UpdateAttempt(
-                                              updateRequestModel, collCode));
-                                        });
-                                      } else {
-                                        setState(() async {
-                                          updateData(updateRequestModel, false)
-                                              .then((value) {
-                                            Navigator.pop(context);
-                                            goHomeDraft();
-                                          });
-                                        });
-                                      }
-                                    });
-                                  },
+                                if (filterValue[filterSelect] == 'PROMISE') {
+                                  if (ctrlRemark.text.isEmpty ||
+                                      ctrlRemark.text == '' ||
+                                      attachment.isEmpty ||
+                                      ctrlDate.text.isEmpty ||
+                                      ctrlDate.text == '') {
+                                    GeneralUtil().showSnackBarError(context,
+                                        'Kolom Mandatory tidak boleh kosong');
+                                  } else {
+                                    submitData(context);
+                                  }
+                                }
+
+                                if (filterValue[filterSelect] == 'NOT PAID' ||
+                                    filterValue[filterSelect] == 'NOT FOUND') {
+                                  if (filterValue[filterSelect] ==
+                                              'NOT FOUND' &&
+                                          ctrlRemark.text.isEmpty ||
+                                      ctrlRemark.text == '' ||
+                                      attachment.isEmpty) {
+                                    GeneralUtil().showSnackBarError(context,
+                                        'Kolom Mandatory tidak boleh kosong');
+                                  } else {
+                                    submitData(context);
+                                  }
+                                }
+                              },
                         child: Container(
                           width: double.infinity,
                           height: 50,

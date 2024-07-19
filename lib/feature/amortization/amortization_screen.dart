@@ -186,7 +186,7 @@ class _AmortizationScreenState extends State<AmortizationScreen> {
                                     DateTime.parse(tempDate.toString());
                                 tempDateDue =
                                     DateTime.parse(tempDateComp.toString());
-                                var outputFormat = DateFormat('dd MMMM yyyy');
+                                var outputFormat = DateFormat('dd-MM-yyyy');
 
                                 dateDue = outputFormat.format(inputDate);
                               }
@@ -200,17 +200,22 @@ class _AmortizationScreenState extends State<AmortizationScreen> {
                                         .paymentDate!);
                                 var inputDate =
                                     DateTime.parse(tempDate.toString());
-                                var outputFormat = DateFormat('dd MMMM yyyy');
+                                var outputFormat = DateFormat('dd-MM-yyyy');
                                 payDate = outputFormat.format(inputDate);
                               }
                               log(tempDateDue.toString());
                               log(dateNows.toString());
                               return Container(
-                                color: tempDateDue.isBefore(dateNows) &&
-                                        state.amortizationResponseModel
-                                            .data![index].paymentList!.isEmpty
-                                    ? Colors.red.withOpacity(0.5)
-                                    : Colors.white,
+                                color: index == 0
+                                    ? Colors.white
+                                    : tempDateDue.isBefore(dateNows) &&
+                                            state
+                                                .amortizationResponseModel
+                                                .data![index]
+                                                .paymentList!
+                                                .isEmpty
+                                        ? Colors.red.withOpacity(0.5)
+                                        : Colors.white,
                                 child: Padding(
                                   padding: const EdgeInsets.only(
                                       left: 8.0,

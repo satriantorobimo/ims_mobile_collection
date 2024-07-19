@@ -328,12 +328,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 await DatabaseHelper.insertCust(
                     state.taskListResponseModel.data!);
                 for (var val in state.taskListResponseModel.data!) {
-                  await DatabaseHelper.insertAgreement(val.agreementList!);
-                  if (val.agreementList!.first.attachmentList!.isNotEmpty) {
-                    for (var vals in val.agreementList!) {
-                      if (vals.attachmentList != null) {
-                        await DatabaseHelper.insertAttachmentList(
-                            vals.attachmentList!, vals.taskId!);
+                  if (val.agreementList!.isNotEmpty) {
+                    await DatabaseHelper.insertAgreement(val.agreementList!);
+                    if (val.agreementList!.first.attachmentList!.isNotEmpty) {
+                      for (var vals in val.agreementList!) {
+                        if (vals.attachmentList != null) {
+                          await DatabaseHelper.insertAttachmentList(
+                              vals.attachmentList!, vals.taskId!);
+                        }
                       }
                     }
                   }

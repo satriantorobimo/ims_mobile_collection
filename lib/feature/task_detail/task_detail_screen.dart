@@ -406,46 +406,42 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  SizedBox(
-                    height: 110,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Address',
-                          style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Address',
+                        style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          border:
+                              Border.all(color: Colors.grey.withOpacity(0.1)),
+                          color: const Color(0xFFFBFBFB),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.1),
+                              blurRadius: 6,
+                              offset: const Offset(-6, 4), // Shadow position
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 8),
-                        Container(
-                          width: double.infinity,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            border:
-                                Border.all(color: Colors.grey.withOpacity(0.1)),
-                            color: const Color(0xFFFBFBFB),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.1),
-                                blurRadius: 6,
-                                offset: const Offset(-6, 4), // Shadow position
-                              ),
-                            ],
-                          ),
-                          padding: const EdgeInsets.all(16.0),
-                          child: Text(
-                            widget.data.fullAddress!,
-                            style: const TextStyle(
-                                color: Color(0xFF565656),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400),
-                          ),
-                        )
-                      ],
-                    ),
+                        padding: const EdgeInsets.all(16.0),
+                        child: Text(
+                          widget.data.fullAddress!,
+                          style: const TextStyle(
+                              color: Color(0xFF565656),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400),
+                        ),
+                      )
+                    ],
                   ),
                   const SizedBox(height: 12),
                   SizedBox(

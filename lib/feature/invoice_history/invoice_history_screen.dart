@@ -424,9 +424,13 @@ class _InvoiceHistoryScreenState extends State<InvoiceHistoryScreen> {
                                                                 CrossAxisAlignment
                                                                     .start,
                                                             children: [
-                                                              const Text(
-                                                                'Nama PIC',
-                                                                style: TextStyle(
+                                                              Text(
+                                                                state
+                                                                    .historyResponseModel
+                                                                    .data![
+                                                                        index]
+                                                                    .collectorName!,
+                                                                style: const TextStyle(
                                                                     fontSize:
                                                                         15,
                                                                     fontWeight:

@@ -208,12 +208,9 @@ class _AmortizationScreenState extends State<AmortizationScreen> {
                               return Container(
                                 color: index == 0
                                     ? Colors.white
-                                    : tempDateDue.isBefore(dateNows) &&
-                                            state
-                                                .amortizationResponseModel
-                                                .data![index]
-                                                .paymentList!
-                                                .isEmpty
+                                    : state.amortizationResponseModel
+                                                .data![index].status ==
+                                            '1'
                                         ? Colors.red.withOpacity(0.5)
                                         : Colors.white,
                                 child: Padding(

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:gallery_saver/gallery_saver.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:intl/intl.dart';
@@ -83,13 +84,15 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
         int index = filter.indexWhere((item) =>
             item.data == widget.agreementList.resultCode!.toUpperCase());
         filterSelect = index;
-        ctrlAmount.text = widget.agreementList.resultPaymentAmount.toString();
+        ctrlAmount.text = GeneralUtil.convertToIdrWithoutSymbol(
+            widget.agreementList.resultPaymentAmount!, 2);
         ctrlRemark.text = widget.agreementList.resultRemarks!;
         if (widget.agreementList.resultPromiseDate != '') {
           DateTime tempDate = DateFormat('dd/MM/yyyy')
               .parse(widget.agreementList.resultPromiseDate!);
           dateSend = DateFormat('yyyy-MM-dd').format(tempDate);
           dateAttach = DateFormat('dd MMM, yyyy').format(tempDate);
+          ctrlDate.text = dateAttach;
         }
         isReadAmt = true;
         isReadRemark = true;
@@ -229,7 +232,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
               ),
               SizedBox(height: 24),
               Text(
-                'Data berhasil disimpan',
+                'Data has been save successfuly',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     fontSize: 16,
@@ -238,7 +241,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
               ),
               SizedBox(height: 16),
               Text(
-                'Data akan masuk ke status not sync.',
+                'Data status changed to not sync.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     fontSize: 12,
@@ -309,7 +312,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
               ),
               SizedBox(height: 24),
               Text(
-                'Data berhasil dikirim',
+                'Data has been sent successfuly',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     fontSize: 16,
@@ -648,6 +651,14 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
         });
       }
     });
+  }
+
+  Future<bool?> saveToGallery(int index) async {
+    try {
+      return await GallerySaver.saveImage(attachment[index].filePath!);
+    } catch (e) {
+      return false;
+    }
   }
 
   @override
@@ -1010,7 +1021,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                   ),
                   const SizedBox(height: 12),
                   Visibility(
-                    visible: filterSelect == 0 || filterSelect == 1,
+                    visible: filterSelect == 0,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -1092,7 +1103,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                     ),
                   ),
                   Visibility(
-                      visible: filterSelect == 0 || filterSelect == 1,
+                      visible: filterSelect == 0,
                       child: const SizedBox(height: 12)),
                   Visibility(
                     visible: filterSelect == 2,
@@ -1274,43 +1285,45 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                                 return const SizedBox(height: 16);
                               },
                               itemBuilder: (BuildContext context, int index) {
-                                return InkWell(
-                                  onTap: () {
-                                    if (attachment[index].ext != null) {
-                                      Navigator.pushNamed(
-                                          context,
-                                          StringRouterUtil
-                                              .imageAssetScreenRoute,
-                                          arguments:
-                                              attachment[index].filePath);
-                                    } else {
-                                      Navigator.pushNamed(
-                                          context,
-                                          StringRouterUtil
-                                              .imageNetworkScreenRoute,
-                                          arguments:
-                                              AttachmentPreviewRequestModel(
-                                                  pFileName: attachment[index]
-                                                      .fileName,
-                                                  pFilePaths: attachment[index]
-                                                      .filePath));
-                                    }
-                                  },
-                                  child: Container(
-                                    width: MediaQuery.of(context).size.width,
-                                    height: 75,
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                        color: const Color(0xFFF8FAFE),
-                                        border: Border.all(
-                                            color: const Color(0xFFF8FAFE)),
-                                        borderRadius: const BorderRadius.all(
-                                            Radius.circular(10))),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Row(
+                                return Container(
+                                  width: MediaQuery.of(context).size.width,
+                                  height: 75,
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                      color: const Color(0xFFF8FAFE),
+                                      border: Border.all(
+                                          color: const Color(0xFFF8FAFE)),
+                                      borderRadius: const BorderRadius.all(
+                                          Radius.circular(10))),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      InkWell(
+                                        onTap: () {
+                                          if (attachment[index].ext != null) {
+                                            Navigator.pushNamed(
+                                                context,
+                                                StringRouterUtil
+                                                    .imageAssetScreenRoute,
+                                                arguments:
+                                                    attachment[index].filePath);
+                                          } else {
+                                            Navigator.pushNamed(
+                                                context,
+                                                StringRouterUtil
+                                                    .imageNetworkScreenRoute,
+                                                arguments:
+                                                    AttachmentPreviewRequestModel(
+                                                        pFileName:
+                                                            attachment[index]
+                                                                .fileName,
+                                                        pFilePaths:
+                                                            attachment[index]
+                                                                .filePath));
+                                          }
+                                        },
+                                        child: Row(
                                           children: [
                                             SvgPicture.asset(
                                               'assets/icon/file.svg',
@@ -1344,21 +1357,61 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                                             )
                                           ],
                                         ),
-                                        Row(
-                                          children: [
-                                            isReadAmt
-                                                ? Container()
-                                                : SvgPicture.asset(
+                                      ),
+                                      Row(
+                                        children: [
+                                          isReadAmt
+                                              ? Container()
+                                              : InkWell(
+                                                  onTap: () {
+                                                    GeneralUtil()
+                                                        .showSnackBarDownload(
+                                                            context,
+                                                            'Download attachment in progress');
+                                                    saveToGallery(index)
+                                                        .then((value) {
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .hideCurrentSnackBar;
+                                                      if (value!) {
+                                                        GeneralUtil()
+                                                            .showSnackBarSuccess(
+                                                                context,
+                                                                'Download attachment successfully');
+                                                      } else {
+                                                        GeneralUtil()
+                                                            .showSnackBarError(
+                                                                context,
+                                                                'Download attachment error');
+                                                      }
+                                                    });
+                                                  },
+                                                  child: SvgPicture.asset(
                                                     'assets/icon/download.svg',
                                                     height: 20,
                                                     width: 20,
                                                   ),
-                                            isReadAmt
-                                                ? Container()
-                                                : const SizedBox(width: 16),
-                                            isReadAmt
-                                                ? Container()
-                                                : SvgPicture.asset(
+                                                ),
+                                          isReadAmt
+                                              ? Container()
+                                              : const SizedBox(width: 16),
+                                          isReadAmt
+                                              ? Container()
+                                              : InkWell(
+                                                  onTap: () {
+                                                    if (attachment.length ==
+                                                        1) {
+                                                      setState(() {
+                                                        attachment = [];
+                                                      });
+                                                    } else {
+                                                      setState(() {
+                                                        attachment
+                                                            .removeAt(index);
+                                                      });
+                                                    }
+                                                  },
+                                                  child: SvgPicture.asset(
                                                     'assets/icon/trash.svg',
                                                     height: 20,
                                                     width: 20,
@@ -1366,10 +1419,10 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                                                         ? Colors.grey
                                                         : Colors.red,
                                                   ),
-                                          ],
-                                        )
-                                      ],
-                                    ),
+                                                ),
+                                        ],
+                                      )
+                                    ],
                                   ),
                                 );
                               })
@@ -1478,16 +1531,14 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                                 widget.agreementList.resultCode != ''
                             ? null
                             : () {
-                                if (filterValue[filterSelect] == 'PAID' ||
-                                    filterValue[filterSelect] ==
-                                        'ALREADY PAID') {
+                                if (filterValue[filterSelect] == 'PAID') {
                                   if (ctrlRemark.text.isEmpty ||
                                       ctrlRemark.text == '' ||
                                       attachment.isEmpty ||
                                       ctrlAmount.text.isEmpty ||
                                       ctrlAmount.text == '') {
                                     GeneralUtil().showSnackBarError(context,
-                                        'Kolom Mandatory tidak boleh kosong');
+                                        'Field mandatory may not be empty');
                                   } else {
                                     submitData(context);
                                   }
@@ -1500,21 +1551,23 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                                       ctrlDate.text.isEmpty ||
                                       ctrlDate.text == '') {
                                     GeneralUtil().showSnackBarError(context,
-                                        'Kolom Mandatory tidak boleh kosong');
+                                        'Field mandatory may not be empty');
                                   } else {
                                     submitData(context);
                                   }
                                 }
 
                                 if (filterValue[filterSelect] == 'NOT PAID' ||
-                                    filterValue[filterSelect] == 'NOT FOUND') {
+                                    filterValue[filterSelect] == 'NOT FOUND' ||
+                                    filterValue[filterSelect] ==
+                                        'ALREADY PAID') {
                                   if (filterValue[filterSelect] ==
                                               'NOT FOUND' &&
                                           ctrlRemark.text.isEmpty ||
                                       ctrlRemark.text == '' ||
                                       attachment.isEmpty) {
                                     GeneralUtil().showSnackBarError(context,
-                                        'Kolom Mandatory tidak boleh kosong');
+                                        'Field mandatory may not be empty');
                                   } else {
                                     submitData(context);
                                   }

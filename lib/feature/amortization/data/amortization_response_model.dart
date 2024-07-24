@@ -37,6 +37,7 @@ class Data {
   String? dueDate;
   double? installmentAmount;
   double? osPrincipalAmount;
+  String? status;
   List<PaymentList>? paymentList;
 
   Data(
@@ -45,6 +46,7 @@ class Data {
       this.dueDate,
       this.installmentAmount,
       this.osPrincipalAmount,
+      this.status,
       this.paymentList});
 
   Data.fromJson(Map<String, dynamic> json) {
@@ -52,6 +54,7 @@ class Data {
     dueDate = json['due_date'];
     installmentAmount = json['installment_amount'];
     osPrincipalAmount = json['os_principal_amount'];
+    status = json['status'];
     if (json['payment_list'] != null) {
       paymentList = <PaymentList>[];
       json['payment_list'].forEach((v) {
@@ -66,6 +69,7 @@ class Data {
     data['due_date'] = dueDate;
     data['installment_amount'] = installmentAmount;
     data['os_principal_amount'] = osPrincipalAmount;
+    data['status'] = status;
     if (paymentList != null) {
       data['payment_list'] = paymentList!.map((v) => v.toJson()).toList();
     }
@@ -79,6 +83,7 @@ class Data {
       'due_date': dueDate,
       'installment_amount': installmentAmount,
       'os_principal_amount': osPrincipalAmount,
+      'status': status,
     };
   }
 
@@ -89,6 +94,7 @@ class Data {
       dueDate: map['due_date'],
       installmentAmount: map['installment_amount'],
       osPrincipalAmount: map['os_principal_amount'],
+      status: map['status'],
     );
   }
 }

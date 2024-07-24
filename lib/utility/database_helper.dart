@@ -92,7 +92,8 @@ class DatabaseHelper {
         installment_no INTEGER,
         due_date TEXT,
         installment_amount DOUBLE,
-        os_principal_amount DOUBLE
+        os_principal_amount DOUBLE,
+        status TEXT
       )
       """);
 
@@ -112,6 +113,7 @@ class DatabaseHelper {
         result_promise_date TEXT,
         result_payment_amount DOUBLE,
         result_remarks TEXT,
+        collector_name TEXT,
         mod_date TEXT
       )
       """);
@@ -149,7 +151,7 @@ class DatabaseHelper {
   static Future<sql.Database> db() async {
     return sql.openDatabase(
       'salesorder.db',
-      version: 10,
+      version: 11,
       onCreate: (sql.Database database, int version) async {
         await createTables(database);
       },

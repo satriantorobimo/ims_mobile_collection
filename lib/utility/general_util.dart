@@ -19,6 +19,15 @@ class GeneralUtil {
     return currencyFormatter.format(number);
   }
 
+  static String convertToIdrWithoutSymbol(dynamic number, int decimalDigit) {
+    NumberFormat currencyFormatter = NumberFormat.currency(
+      locale: 'id',
+      symbol: '',
+      decimalDigits: decimalDigit,
+    );
+    return currencyFormatter.format(number);
+  }
+
   double calculateDistance(lat1, lon1, lat2, lon2) {
     var p =
         0.017453292519943295; //conversion factor from radians to decimal degrees, exactly math.pi/180
@@ -69,6 +78,30 @@ class GeneralUtil {
       behavior: SnackBarBehavior.floating,
       padding: const EdgeInsets.all(8),
       duration: const Duration(days: 365),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
+  void showSnackBarDownload(BuildContext context, String msg) {
+    final snackBar = SnackBar(
+      content: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            msg,
+            style: const TextStyle(
+                fontSize: 13, color: Colors.black, fontWeight: FontWeight.w400),
+          ),
+          const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(),
+          )
+        ],
+      ),
+      backgroundColor: Colors.orange,
+      behavior: SnackBarBehavior.floating,
+      padding: const EdgeInsets.all(8),
     );
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }

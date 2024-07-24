@@ -81,18 +81,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: const [
                       Text(
-                        'Are you sure?',
+                        'Do you want to logout?',
                         style: TextStyle(
                             color: Colors.black,
                             fontSize: 18,
                             fontWeight: FontWeight.w500),
-                      ),
-                      Text(
-                        'Anda akan keluar dari akun ini',
-                        style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w300),
                       ),
                     ],
                   ),
@@ -115,7 +108,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Center(
-                              child: Text('TIDAK',
+                              child: Text('NO',
                                   style: TextStyle(
                                       fontSize: 15,
                                       color: Colors.white,
@@ -151,7 +144,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Center(
-                              child: Text('YA',
+                              child: Text('YES',
                                   style: TextStyle(
                                       fontSize: 15,
                                       color: Colors.white,

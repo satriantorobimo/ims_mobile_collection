@@ -50,6 +50,7 @@ class Data {
   String? resultPromiseDate;
   double? resultPaymentAmount;
   String? resultRemarks;
+  String? collectorName;
   String? modDate;
 
   Data(
@@ -60,6 +61,7 @@ class Data {
       this.resultPromiseDate,
       this.resultPaymentAmount,
       this.resultRemarks,
+      this.collectorName,
       this.modDate});
 
   Data.fromJson(Map<String, dynamic> json) {
@@ -69,6 +71,7 @@ class Data {
     resultPromiseDate = json['result_promise_date'];
     resultPaymentAmount = json['result_payment_amount'];
     resultRemarks = json['result_remarks'];
+    collectorName = json['collector_name'];
     modDate = json['mod_date'];
   }
 
@@ -80,6 +83,7 @@ class Data {
     data['result_promise_date'] = resultPromiseDate;
     data['result_payment_amount'] = resultPaymentAmount;
     data['result_remarks'] = resultRemarks;
+    data['collector_name'] = collectorName;
     data['mod_date'] = modDate;
     return data;
   }

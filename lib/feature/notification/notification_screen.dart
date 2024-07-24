@@ -126,7 +126,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     return data.isEmpty
         ? const Center(
             child: Text(
-            'Saat ini anda belum dapat Notifikasi',
+            'You have no notification right now.',
             style: TextStyle(
                 color: Color(0xFF7C7C7C),
                 fontSize: 14,

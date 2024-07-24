@@ -206,7 +206,10 @@ class _AmortizationScreenState extends State<AmortizationScreen> {
                               log(tempDateDue.toString());
                               log(dateNows.toString());
                               return Container(
-                                color: index == 0
+                                color: index == 0 &&
+                                        state.amortizationResponseModel
+                                                .data![index].installmentNo ==
+                                            0
                                     ? Colors.white
                                     : state.amortizationResponseModel
                                                 .data![index].status ==

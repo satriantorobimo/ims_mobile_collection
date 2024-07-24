@@ -232,7 +232,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
               ),
               SizedBox(height: 24),
               Text(
-                'Data has been save successfuly',
+                'Data has been save successfully',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     fontSize: 16,
@@ -651,14 +651,6 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
         });
       }
     });
-  }
-
-  Future<bool?> saveToGallery(int index) async {
-    try {
-      return await GallerySaver.saveImage(attachment[index].filePath!);
-    } catch (e) {
-      return false;
-    }
   }
 
   @override
@@ -1368,23 +1360,28 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                                                         .showSnackBarDownload(
                                                             context,
                                                             'Download attachment in progress');
-                                                    saveToGallery(index)
-                                                        .then((value) {
-                                                      ScaffoldMessenger.of(
-                                                              context)
-                                                          .hideCurrentSnackBar;
-                                                      if (value!) {
+                                                    try {
+                                                      GallerySaver.saveImage(
+                                                              attachment[index]
+                                                                  .filePath!)
+                                                          .then((path) {
+                                                        ScaffoldMessenger.of(
+                                                                context)
+                                                            .hideCurrentSnackBar;
                                                         GeneralUtil()
                                                             .showSnackBarSuccess(
                                                                 context,
                                                                 'Download attachment successfully');
-                                                      } else {
-                                                        GeneralUtil()
-                                                            .showSnackBarError(
-                                                                context,
-                                                                'Download attachment error');
-                                                      }
-                                                    });
+                                                      });
+                                                    } catch (e) {
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .hideCurrentSnackBar;
+                                                      GeneralUtil()
+                                                          .showSnackBarError(
+                                                              context,
+                                                              e.toString());
+                                                    }
                                                   },
                                                   child: SvgPicture.asset(
                                                     'assets/icon/download.svg',

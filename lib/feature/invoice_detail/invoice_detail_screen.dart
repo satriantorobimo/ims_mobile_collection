@@ -312,7 +312,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
               ),
               SizedBox(height: 24),
               Text(
-                'Data has been sent successfuly',
+                'Data has been sent successfully',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     fontSize: 16,
@@ -1330,7 +1330,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                                                   MainAxisAlignment.center,
                                               children: [
                                                 Text(
-                                                  'File ${attachment[index].fileName!.substring(0, 25)}',
+                                                  'File ${attachment[index].fileName!.substring(0, 15)}',
                                                   style: const TextStyle(
                                                       color: Colors.black,
                                                       fontSize: 14,
@@ -1359,11 +1359,14 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                                                     GeneralUtil()
                                                         .showSnackBarDownload(
                                                             context,
-                                                            'Download attachment in progress');
+                                                            'Save attachment in progress');
                                                     try {
                                                       GallerySaver.saveImage(
                                                               attachment[index]
-                                                                  .filePath!)
+                                                                  .filePath!,
+                                                              albumName:
+                                                                  'MobileColl',
+                                                              toDcim: true)
                                                           .then((path) {
                                                         ScaffoldMessenger.of(
                                                                 context)
@@ -1371,7 +1374,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen>
                                                         GeneralUtil()
                                                             .showSnackBarSuccess(
                                                                 context,
-                                                                'Download attachment successfully');
+                                                                'Save attachment to gallery successfully');
                                                       });
                                                     } catch (e) {
                                                       ScaffoldMessenger.of(

@@ -6,10 +6,8 @@
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
     <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
     <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS_FULL"/>
-     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-                 android:maxSdkVersion="29" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
-                 android:maxSdkVersion="29" />
+     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <queries>
         <!-- If your app checks for SMS support -->
         <intent>
@@ -28,8 +26,8 @@
     </queries>
     <application
             android:label="@string/app_name"
-            android:requestLegacyExternalStorage="true"
-            android:icon="@mipmap/ic_launcher">
+            android:icon="@mipmap/ic_launcher"
+            android:requestLegacyExternalStorage="true">
         <activity
                 android:name=".MainActivity"
                 android:exported="true"
